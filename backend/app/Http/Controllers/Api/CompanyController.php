@@ -258,12 +258,78 @@ class CompanyController extends BaseController
             // Retrieve the targeted company
             $company = Company::find($request->companyId);
 
-            // Send a simple text email. Replace with Mailable if you need rich content.
-            Mail::raw('Please find the brochure attached.', function ($message) use ($request) {
+            // Prepare detailed email body
+            $body = <<<'EOT'
+<!DOCTYPE html>
+<html>
+<body style="font-family: Arial, sans-serif; line-height: 1.5;">
+<p>Dear Madam / Sir,</p>
+
+<p>Greetings of the day!</p>
+
+<p>We would like to take an opportunity to briefly introduce <strong>“K K CARGO MOVERS”</strong>. We are one of the leading EXIM CONSULTANT in Mumbai.</p>
+
+<p style=" padding:4px; font-weight:bold; display:inline-block;">We provide <span style="background-color:#ffff00; font-style:italic;">Consultation</span>  Regarding -</p>
+<ul>
+    <li>Import &amp; Export documentation</li>
+    <li>Perfect HS CODE</li>
+    <li>Customs &amp; IGST Notifications</li>
+    <li>Consultation regarding to Customs Law &amp; Procedure</li>
+    <li>Consultation in <span style="background-color:#00cfff; font-weight:bold;">FSSAI &amp; CDSCO</span></li>
+    <li>Compliances under different Acts related to Indian Customs ie. BIS, EPR, CIB &amp; RC, NDPS,.......</li>
+</ul>
+
+<p style=" padding:4px; font-weight:bold; display:inline-block;">We provide <span style="background-color:#ffa500; font-style:italic;">Services</span> Regarding -</p>
+<ul>
+    <li>Freight for Imports / Exports</li>
+    <li>Import &amp; Export Customs Clearance (Licensed Customs Brokers)</li>
+    <li>Warehousing</li>
+    <li>Surface Transportation</li>
+    <li>Insurance</li>
+</ul>
+
+<p>We promise to offer you speedy, efficient and competitive services from start to end.</p>
+
+<p>Please give us an opportunity to serve your esteemed organisation.</p>
+
+<br/>
+<p><em><strong>Thanks &amp; Regards,</strong><br/>
+&nbsp;K. K. SINGH<br/>
+K. K. Cargo Movers<br/>
+A-801, Arenja Chambers II, Plot No. 7,<br/>
+Sector 15, CBD Belapur, Navi Mumbai – 400614<br/>
+Contact&nbsp;No.: +91&nbsp;-22- 41277888 ,<br/>
+Mob.&nbsp;No&nbsp;&nbsp;9920209355 / 9967736644,<br/>
+Email&nbsp;id:&nbsp;<a href="mailto:businesspro@kkcargo.in">businesspro@kkcargo.in</a><br/>
+Website&nbsp;:&nbsp;<a href="http://www.kkcargo.in" target="_blank">www.kkcargo.in</a>
+</p>
+
+<!-- Company logos -->
+<p>
+    <img src="{LOGO_DATA_URI}" alt="Logo" height="40" style="margin-right:8px;" />
+  
+</p>
+
+</body>
+</html>
+EOT;
+            // Determine recipient name for subject line
+            $recipientName = $company->contact_person ?? $company->contact_name ?? 'Sir/Madam';
+            // Path to local logo and build base64 data URI
+            $logoPath = base_path('pdf/logo1.png');
+            $logoDataUri = '';
+            if (file_exists($logoPath)) {
+                $logoData = base64_encode(file_get_contents($logoPath));
+                $logoDataUri = 'data:image/png;base64,' . $logoData;
+            }
+            // Replace placeholder with actual data URI
+            $body = str_replace('{LOGO_DATA_URI}', $logoDataUri, $body);
+            // Send email with brochure attached
+            Mail::html($body, function ($message) use ($request, $recipientName, $logoDataUri) {
                 $message->to($request->email)
-                        ->subject('Company Brochure')
-                        ->attach(base_path('pdf/blank.pdf'), [
-                            'as' => 'CompanyBrochure.pdf',
+                        ->subject("Kind Attention {$recipientName} - KK Cargo")
+                        ->attach(base_path('pdf/kk.pdf'), [
+                            'as' => 'k k cargo profile.pdf',
                             'mime' => 'application/pdf',
                         ]);
             });
