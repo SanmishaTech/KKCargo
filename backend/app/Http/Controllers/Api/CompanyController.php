@@ -315,21 +315,20 @@ Website&nbsp;:&nbsp;<a href="http://www.kkcargo.in" target="_blank">www.kkcargo.
 EOT;
             // Determine recipient name for subject line
             $recipientName = $company->contact_person ?? $company->contact_name ?? 'Sir/Madam';
-            // Path to local logo and build base64 data URI
-            $logoPath = base_path('pdf/logo1.png');
-            $logoDataUri = '';
-            if (file_exists($logoPath)) {
-                $logoData = base64_encode(file_get_contents($logoPath));
-                $logoDataUri = 'data:image/png;base64,' . $logoData;
-            }
-            // Replace placeholder with actual data URI
-            $body = str_replace('{LOGO_DATA_URI}', $logoDataUri, $body);
-            // Send email with brochure attached
-            Mail::html($body, function ($message) use ($request, $recipientName, $logoDataUri) {
+            // Path to local logo for embedding
+            $logoPath = public_path('images/logo1.png');
+            // Send email with brochure attached and inline logo (CID)
+            Mail::send([], [], function ($message) use ($request, $recipientName, $body, $logoPath) {
+                // Embed the logo and get its CID
+                $cid      = file_exists($logoPath) ? $message->embed($logoPath) : '';
+                // Replace placeholder with the CID
+                $bodyHtml = str_replace('{LOGO_DATA_URI}', $cid, $body);
+
                 $message->to($request->email)
                         ->subject("Kind Attention {$recipientName} - KK Cargo")
+                        ->html($bodyHtml)
                         ->attach(base_path('pdf/kk.pdf'), [
-                            'as' => 'k k cargo profile.pdf',
+                            'as'   => 'k k cargo profile.pdf',
                             'mime' => 'application/pdf',
                         ]);
             });
