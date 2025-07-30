@@ -31,7 +31,7 @@ class CompanyController extends BaseController
 
         // City filtering
         if ($city = $request->query('city')) {
-            $query->where('city', $city);
+            $query->where('city', 'like', '%' . $city . '%');
         }
 
         // Date filtering by month and year
