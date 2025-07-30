@@ -85,6 +85,8 @@ export default function Dashboard({
   dateFilter,
   onCompanyTypeFilter,
   companyType,
+  onCityFilter,
+  city,
 }: {
   breadcrumbs?: any[];
   searchPlaceholder?: string;
@@ -115,6 +117,8 @@ export default function Dashboard({
   dateFilter?: string;
   onCompanyTypeFilter?: (companyType: string) => void;
   companyType?: string;
+  onCityFilter?: (city: string) => void;
+  city?: string;
 }) {
   const navigate = useNavigate();
   const [toggleedit, setToggleedit] = useState(false);
@@ -379,8 +383,11 @@ export default function Dashboard({
                   onValueChange={onDateFilter}
                   companyType={companyType}
                   onCompanyTypeChange={onCompanyTypeFilter}
+                  city={city}
+                  onCityChange={onCityFilter}
                   showCompanyTypeFilter={true}
-                  placeholder="Filter by month/year & type"
+                  showCityFilter={true}
+                  placeholder="Filter by month/year, type & city"
                   className="w-64"
                 />
                 

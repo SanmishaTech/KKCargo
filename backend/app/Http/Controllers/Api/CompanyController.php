@@ -29,6 +29,11 @@ class CompanyController extends BaseController
             $query->where('type_of_company', $companyType);
         }
 
+        // City filtering
+        if ($city = $request->query('city')) {
+            $query->where('city', $city);
+        }
+
         // Date filtering by month and year
         if ($month = $request->query('month')) {
             $query->whereMonth('created_at', $month);
@@ -183,6 +188,25 @@ class CompanyController extends BaseController
             return $this->sendResponse($types, 'Company types retrieved successfully');
         } catch (\Exception $e) {
             return $this->sendError('Error retrieving company types', ['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Get distinct company cities for dropdowns.
+     */
+    public function cities(): JsonResponse
+    {
+        try {
+            $cities = Company::query()
+                ->distinct()
+                ->whereNotNull('city')
+                ->where('city', '!=', '')
+                ->pluck('city')
+                ->values(); // Reset array keys
+            
+            return $this->sendResponse($cities, 'Company cities retrieved successfully');
+        } catch (\Exception $e) {
+            return $this->sendError('Error retrieving company cities', ['error' => $e->getMessage()], 500);
         }
     }
 

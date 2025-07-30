@@ -27,6 +27,9 @@ interface DateFilterProps {
   companyType?: string
   onCompanyTypeChange?: (value: string) => void
   showCompanyTypeFilter?: boolean
+  city?: string
+  onCityChange?: (value: string) => void
+  showCityFilter?: boolean
 }
 
 export function DateFilter({
@@ -38,11 +41,15 @@ export function DateFilter({
   companyType,
   onCompanyTypeChange,
   showCompanyTypeFilter = false,
+  city,
+  onCityChange,
+  showCityFilter = false,
 }: DateFilterProps) {
   const [open, setOpen] = React.useState(false)
   const [selectedYear, setSelectedYear] = React.useState<string>("")
   const [selectedMonth, setSelectedMonth] = React.useState<string>("")
   const [selectedCompanyType, setSelectedCompanyType] = React.useState<string>(companyType || "all")
+  const [selectedCity, setSelectedCity] = React.useState<string>(city || "all")
 
   // Fetch company types
   const { data: companyTypesResponse } = useGetData({
@@ -53,7 +60,17 @@ export function DateFilter({
     },
   })
 
+  // Fetch company cities
+  const { data: companyCitiesResponse } = useGetData({
+    endpoint: '/api/company-cities',
+    params: {
+      queryKey: ['companyCities'],
+      enabled: showCityFilter,
+    },
+  })
+
   const companyTypes = Array.isArray(companyTypesResponse?.data) ? companyTypesResponse.data : []
+  const companyCities = Array.isArray(companyCitiesResponse?.data) ? companyCitiesResponse.data : []
 
   // Extract year and month from value when it changes
   React.useEffect(() => {
@@ -71,6 +88,11 @@ export function DateFilter({
   React.useEffect(() => {
     setSelectedCompanyType(companyType || "all")
   }, [companyType])
+
+  // Update selected city when prop changes
+  React.useEffect(() => {
+    setSelectedCity(city || "all")
+  }, [city])
 
   // Generate years array (current year + 5 years back)
   const currentYear = new Date().getFullYear()
@@ -101,6 +123,10 @@ export function DateFilter({
       // Send empty string if 'all' is selected to clear the filter
       onCompanyTypeChange?.(selectedCompanyType === 'all' ? '' : selectedCompanyType)
     }
+    if (showCityFilter) {
+      // Send empty string if 'all' is selected to clear the filter
+      onCityChange?.(selectedCity === 'all' ? '' : selectedCity)
+    }
     setOpen(false)
   }
 
@@ -108,9 +134,13 @@ export function DateFilter({
     setSelectedYear("")
     setSelectedMonth("")
     setSelectedCompanyType("all")
+    setSelectedCity("all")
     onValueChange?.("")
     if (showCompanyTypeFilter) {
       onCompanyTypeChange?.("")
+    }
+    if (showCityFilter) {
+      onCityChange?.("")
     }
     onClear?.()
     setOpen(false)
@@ -127,6 +157,10 @@ export function DateFilter({
     
     if (showCompanyTypeFilter && companyType && companyType !== 'all') {
       parts.push(`Type: ${companyType}`)
+    }
+    
+    if (showCityFilter && city && city !== 'all') {
+      parts.push(`City: ${city}`)
     }
     
     return parts.length > 0 ? parts.join(' | ') : placeholder
@@ -198,6 +232,25 @@ export function DateFilter({
                     {companyTypes.map((type: string) => (
                       <SelectItem key={type} value={type}>
                         {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {showCityFilter && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">City</label>
+                <Select value={selectedCity} onValueChange={setSelectedCity}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select city" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Cities</SelectItem>
+                    {companyCities.map((cityName: string) => (
+                      <SelectItem key={cityName} value={cityName}>
+                        {cityName}
                       </SelectItem>
                     ))}
                   </SelectContent>

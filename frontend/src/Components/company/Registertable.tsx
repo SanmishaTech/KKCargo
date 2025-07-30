@@ -56,7 +56,7 @@ export default function Dashboardholiday() {
     total: 0,
   });
   const [searchQuery, setSearchQuery] = useState("");
-  const [filter, setFilter] = useState<{dateFilter?: string, companyType?: string}>({});
+  const [filter, setFilter] = useState<{dateFilter?: string, companyType?: string, city?: string}>({});
 
   // Data fetching using shared GET hook
   const {
@@ -70,6 +70,7 @@ export default function Dashboardholiday() {
       if (searchQuery) params.set('search', searchQuery)
       if (filter.dateFilter) params.set('date_filter', filter.dateFilter)
       if (filter.companyType) params.set('company_type', filter.companyType)
+      if (filter.city) params.set('city', filter.city)
       params.set('page', paginationState.currentPage.toString())
       return `/api/companies?${params.toString()}`
     })(),
@@ -128,7 +129,7 @@ export default function Dashboardholiday() {
   // Refetch whenever search query, filters, or page changes
   useEffect(() => {
     refetch();
-  }, [searchQuery, filter.dateFilter, filter.companyType, paginationState.currentPage]);
+  }, [searchQuery, filter.dateFilter, filter.companyType, filter.city, paginationState.currentPage]);
 
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
@@ -143,6 +144,11 @@ export default function Dashboardholiday() {
 
   const handleCompanyTypeFilter = (companyType: string) => {
     setFilter((prev) => ({ ...prev, companyType: companyType }));
+    setPaginationState((prev) => ({ ...prev, currentPage: 1 }));
+  };
+
+  const handleCityFilter = (city: string) => {
+    setFilter((prev) => ({ ...prev, city: city }));
     setPaginationState((prev) => ({ ...prev, currentPage: 1 }));
   };
 
@@ -359,8 +365,10 @@ export default function Dashboardholiday() {
         onSearch={handleSearch}
         onDateFilter={handleDateFilter}
         onCompanyTypeFilter={handleCompanyTypeFilter}
+        onCityFilter={handleCityFilter}
         dateFilter={filter.dateFilter}
         companyType={filter.companyType}
+        city={filter.city}
         currentPage={paginationState.currentPage}
         totalPages={paginationState.totalPages}
         handleNextPage={handleNextPage}
