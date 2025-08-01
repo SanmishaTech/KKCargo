@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
+import axios from "axios";
 
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { Separator } from "@/components/ui/separator";
@@ -25,6 +26,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "../ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../ui/dialog";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -80,6 +92,14 @@ export function AppSidebar({ role }: AppSidebarProps) {
     }
   }, []);
 
+  // Update form data when userData changes
+  useEffect(() => {
+    setUpdateProfileData(prev => ({
+      ...prev,
+      email: userData.userEmail
+    }));
+  }, [userData.userEmail]);
+
   // Manage open state for items with dropdown children
   const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({});
   // State to control the AlertDialog in the logo dropdown
@@ -91,6 +111,15 @@ export function AppSidebar({ role }: AppSidebarProps) {
 
   // State for Command Menu
   const [isCommandMenuOpen, setIsCommandMenuOpen] = useState(false);
+
+  // State for Update Profile Dialog
+  const [isUpdateProfileOpen, setIsUpdateProfileOpen] = useState(false);
+  const [updateProfileData, setUpdateProfileData] = useState({
+    email: userData.userEmail,
+    currentPassword: '',
+    password: '',
+    confirmPassword: ''
+  });
 
   // Dark mode toggle state
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -183,14 +212,117 @@ export function AppSidebar({ role }: AppSidebarProps) {
 
   // Logout function – replace with your actual logout logic
   const handleLogout = () => {
-    localStorage.clear();
-    toast.success('Logged Out Successfully');
-    navigate({ to: '/' });
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    toast.success("Logged out successfully");
+    navigate({ to: "/" });
   };
 
   const handleUpdateProfile = () => {
-    navigate({ to: '.' });
     setProfileDropdownOpen(false);
+    setIsUpdateProfileOpen(true);
+  };
+
+  const handleUpdateProfileSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validation
+    if (!updateProfileData.email) {
+      toast.error("Email is required");
+      return;
+    }
+
+    if (!updateProfileData.currentPassword) {
+      toast.error("Current password is required");
+      return;
+    }
+    
+    if (updateProfileData.password && updateProfileData.password !== updateProfileData.confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+    
+    if (updateProfileData.password && updateProfileData.password.length < 6) {
+      toast.error("Password must be at least 6 characters long");
+      return;
+    }
+    
+    try {
+      // Verify current password by attempting login
+      try {
+        await axios.post("/api/login", {
+          email: userData.userEmail,
+          password: updateProfileData.currentPassword,
+        });
+      } catch (err) {
+        toast.error("Current password is incorrect");
+        return;
+      }
+
+      // Retrieve authentication information
+      const token = localStorage.getItem("token");
+      const staffId = localStorage.getItem("staff_id");
+      if (!token || !staffId) {
+        toast.error("Authentication missing. Please login again.");
+        return;
+      }
+
+      // Build payload expected by backend
+      const payload: Record<string, any> = {
+        staff_name: userData.userName || "",
+        email: updateProfileData.email,
+      };
+      if (updateProfileData.password) {
+        payload.password = updateProfileData.password;
+      }
+
+      // Call backend API
+      await axios.put(`/api/staff/${staffId}`, payload, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      // Update localStorage with new email
+      const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+      const updatedUser = {
+        ...currentUser,
+        email: updateProfileData.email,
+      };
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+
+      // Update local state
+      setUserData(prev => ({
+        ...prev,
+        userEmail: updateProfileData.email,
+      }));
+      
+      // Reset form
+      setUpdateProfileData({
+        email: updateProfileData.email,
+        currentPassword: '',
+        password: '',
+        confirmPassword: ''
+      });
+      
+      setIsUpdateProfileOpen(false);
+      toast.success("Profile updated successfully");
+      
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast.error("Failed to update profile");
+    }
+  };
+
+  const handleUpdateProfileCancel = () => {
+    setUpdateProfileData({
+      email: userData.userEmail,
+      currentPassword: '',
+      password: '',
+      confirmPassword: ''
+    });
+    setIsUpdateProfileOpen(false);
   };
 
   return (
@@ -364,7 +496,7 @@ export function AppSidebar({ role }: AppSidebarProps) {
             </div>
           </div>
           <div className="h-px bg-muted my-1" />
-          {(role === 'staff') && (
+          
             <button
               onClick={handleUpdateProfile}
               className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground w-full text-left"
@@ -372,7 +504,7 @@ export function AppSidebar({ role }: AppSidebarProps) {
               <User className="mr-2 h-4 w-4" />
               <span>Update Profile</span>
             </button>
-          )}
+          
           <button
             onClick={() => setOpenLogoAlert(true)}
             className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground w-full text-left text-destructive focus:text-destructive"
@@ -398,6 +530,81 @@ export function AppSidebar({ role }: AppSidebarProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {/* Update Profile Dialog */}
+      <Dialog open={isUpdateProfileOpen} onOpenChange={setIsUpdateProfileOpen}>
+        <DialogContent className="bg-white sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Update Profile</DialogTitle>
+            <DialogDescription>
+              Update your email and password. Leave password fields empty if you don't want to change your password.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleUpdateProfileSubmit}>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="email" className="text-right">
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={updateProfileData.email}
+                  onChange={(e) => setUpdateProfileData(prev => ({ ...prev, email: e.target.value }))}
+                  className="col-span-3"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="currentPassword" className="text-right">
+                  Current Password
+                </Label>
+                <Input
+                  id="currentPassword"
+                  type="password"
+                  value={updateProfileData.currentPassword}
+                  onChange={(e) => setUpdateProfileData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                  className="col-span-3"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="password" className="text-right">
+                  New Password
+                </Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={updateProfileData.password}
+                  onChange={(e) => setUpdateProfileData(prev => ({ ...prev, password: e.target.value }))}
+                  className="col-span-3"
+                  placeholder="Leave empty to keep current password"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="confirmPassword" className="text-right">
+                  Confirm Password
+                </Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  value={updateProfileData.confirmPassword}
+                  onChange={(e) => setUpdateProfileData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                  className="col-span-3"
+                  placeholder="Confirm new password"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={handleUpdateProfileCancel}>
+                Cancel
+              </Button>
+              <Button type="submit">
+                Update Profile
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </Sidebar>
   );
 }

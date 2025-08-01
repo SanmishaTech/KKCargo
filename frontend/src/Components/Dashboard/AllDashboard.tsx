@@ -37,15 +37,21 @@ export default function ResponsiveLabDashboard() {
     params: {
       queryKey: ["dashboard", searchQuery, currentPage.toString()],
       onSuccess: (data: any) => {
-        if (data.status) {
-          const { staff_summary, follow_ups, next_upcoming_follow_up } = data.data;
-          setStaffCount(staff_summary.total_staff);
-          setCompanyCount(staff_summary.company_count);
-          setNextUpcomingFollowUp(next_upcoming_follow_up);
-          setFollowUps(follow_ups.data || []);
-          setNextPageUrl(follow_ups.next_page_url);
-          setPrevPageUrl(follow_ups.prev_page_url);
+        if (!data?.status) {
+          return;
         }
+
+        const staffSummary = data?.data?.staff_summary ?? {};
+        const followUpsPayload = data?.data?.follow_ups ?? {};
+        const upcoming = data?.data?.next_upcoming_follow_up ?? null;
+
+        // Safely update the state with fallback values to avoid undefined errors
+        setStaffCount(staffSummary?.total_staff ?? 0);
+        setCompanyCount(staffSummary?.company_count ?? 0);
+        setNextUpcomingFollowUp(upcoming);
+        setFollowUps(followUpsPayload?.data ?? []);
+        setNextPageUrl(followUpsPayload?.next_page_url ?? null);
+        setPrevPageUrl(followUpsPayload?.prev_page_url ?? null);
       },
       onError: (error: any) => {
         console.error("Error fetching dashboard data:", error);

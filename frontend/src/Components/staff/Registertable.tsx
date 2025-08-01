@@ -159,6 +159,27 @@ export default function Dashboardholiday() {
   };
 
   useEffect(() => {
+    // Build table headers and row actions dynamically based on the logged-in user's role
+    const tableHeaders: TableColumnHeader[] = [
+      { label: "Name", key: "one" },
+      { label: "Email", key: "two" },
+      { label: "Role", key: "four" },
+    ];
+
+    // Show the Action column only for non-staff users
+    if (User?.role?.toLowerCase() !== "staff") {
+      tableHeaders.push({ label: "Action", key: "action" });
+    }
+
+    // Define available row actions (Edit/Delete) only if the user is not staff
+    const rowActions =
+      User?.role?.toLowerCase() !== "staff"
+        ? [
+            { label: "Edit", value: "edit" },
+            { label: "Delete", value: "delete" },
+          ]
+        : [];
+
     setConfig({
       breadcrumbs: [
         { label: "Home", href: "/dashboards" },
@@ -170,16 +191,8 @@ export default function Dashboardholiday() {
       tableColumns: {
         title: `Staff`,
         description: "Manage staff  and view their details.",
-        headers: [
-          { label: "Name", key: "one" },
-          { label: "Email", key: "two" },
-           { label: "Role", key: "four" },
-          { label: "Action", key: "action" },
-        ],
-        actions: [
-          { label: "Edit", value: "edit" },
-          { label: "Delete", value: "delete" },
-        ],
+        headers: tableHeaders,
+        actions: rowActions,
         pagination: {
           currentPage: paginationState.currentPage,
           lastPage: paginationState.totalPages,
