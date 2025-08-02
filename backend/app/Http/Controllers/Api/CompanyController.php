@@ -287,23 +287,24 @@ class CompanyController extends BaseController
 <!DOCTYPE html>
 <html>
 <body style="font-family: Arial, sans-serif; line-height: 1.5;">
-<p>Dear Madam / Sir,</p>
+ 
+<p> <strong><em>Dear Madam / Sir,</em></strong></p>
 
-<p>Greetings of the day!</p>
+<p><strong><em>Greetings from K.K Cargo Movers !</em></strong></p>
 
-<p>We would like to take an opportunity to briefly introduce <strong>“K K CARGO MOVERS”</strong>. We are one of the leading EXIM CONSULTANT in Mumbai.</p>
+<p>We are one of the leading <strong>EXIM Consultancy</strong>  firms with extensive expertise in providing end-to-end solutions for businesses involved in international trade. Our services are designed to simplify export-import processes , ensure compliance, and maximise benefits under various trade schemes.</p>
 
-<p style=" padding:4px; font-weight:bold; display:inline-block;">We provide <span style="background-color:#ffff00; font-style:italic;">Consultation</span>  Regarding -</p>
+<p style="display:inline-block;">We provide <strong>Consultation</strong>  Regarding -</p>
 <ul>
     <li>Import &amp; Export documentation</li>
     <li>Perfect HS CODE</li>
     <li>Customs &amp; IGST Notifications</li>
     <li>Consultation regarding to Customs Law &amp; Procedure</li>
-    <li>Consultation in <span style="background-color:#00cfff; font-weight:bold;">FSSAI &amp; CDSCO</span></li>
-    <li>Compliances under different Acts related to Indian Customs ie. BIS, EPR, CIB &amp; RC, NDPS,.......</li>
+    <li>Consultation in <strong>FSSAI &amp; CDSCO</strong></li>
+    <li>Compliances under different Acts related to Indian Customs ie. BIS, EPR, CIB &amp; RC, NDPS,.......etc</li>
 </ul>
 
-<p style=" padding:4px; font-weight:bold; display:inline-block;">We provide <span style="background-color:#ffa500; font-style:italic;">Services</span> Regarding -</p>
+<p style="display:inline-block;">We provide <strong>Services</strong> Regarding -</p>
 <ul>
     <li>Freight for Imports / Exports</li>
     <li>Import &amp; Export Customs Clearance (Licensed Customs Brokers)</li>
@@ -312,25 +313,29 @@ class CompanyController extends BaseController
     <li>Insurance</li>
 </ul>
 
-<p>We promise to offer you speedy, efficient and competitive services from start to end.</p>
+<p>With years of experience and a dedicated team of professionals, we have successfully assisted companies across industries in streamlining their EXIM operations(start to end) and achieving global business growth.
+<br/>
+We would be glad to connect with you to understand your requirements and explore how we can support you.
+</p>
 
-<p>Please give us an opportunity to serve your esteemed organisation.</p>
+
+<p>Looking forward to the opportunity to collaborate.</p>
 
 <br/>
-<p><em><strong>Thanks &amp; Regards,</strong><br/>
+<p><strong><em>Thanks &amp; Regards,<br/>
 &nbsp;K. K. SINGH<br/>
 K. K. Cargo Movers<br/>
 A-801, Arenja Chambers II, Plot No. 7,<br/>
 Sector 15, CBD Belapur, Navi Mumbai – 400614<br/>
-Contact&nbsp;No.: +91&nbsp;-22- 41277888 ,<br/>
-Mob.&nbsp;No&nbsp;&nbsp;9920209355 / 9967736644,<br/>
-Email&nbsp;id:&nbsp;<a href="mailto:businesspro@kkcargo.in">businesspro@kkcargo.in</a><br/>
-Website&nbsp;:&nbsp;<a href="http://www.kkcargo.in" target="_blank">www.kkcargo.in</a>
+Contact&nbsp; No.: +91&nbsp;-22- 41277888 ,<br/>
+Mob.&nbsp; No&nbsp; 9920209355 / 9967736644,<br/>
+Email&nbsp; id :&nbsp;<a href="mailto:businesspro@kkcargo.in">businesspro@kkcargo.in</a><br/>
+Website&nbsp; :&nbsp;<a href="http://www.kkcargo.in" target="_blank">www.kkcargo.in</a></em></strong>
 </p>
 
 <!-- Company logos -->
 <p>
-    <img src="{LOGO_DATA_URI}" alt="Logo" height="40" style="margin-right:8px;" />
+    <img src="{LOGO_DATA_URI}" alt="Logo" height="65" style="margin-right:8px;" />
   
 </p>
 
