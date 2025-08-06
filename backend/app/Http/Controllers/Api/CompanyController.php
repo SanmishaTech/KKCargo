@@ -344,17 +344,18 @@ Website&nbsp; :&nbsp;<a href="http://www.kkcargo.in" target="_blank">www.kkcargo
 EOT;
             // Determine recipient name for subject line
             $recipientName = $company->contact_person ?? $company->contact_name ?? 'Sir/Madam';
+            $companyName = $company->company_name;
             // Path to local logo for embedding
             $logoPath = public_path('images/logo1.png');
             // Send email with brochure attached and inline logo (CID)
-            Mail::send([], [], function ($message) use ($request, $recipientName, $body, $logoPath) {
+            Mail::send([], [], function ($message) use ($request, $recipientName, $body, $logoPath, $companyName) {
                 // Embed the logo and get its CID
                 $cid      = file_exists($logoPath) ? $message->embed($logoPath) : '';
                 // Replace placeholder with the CID
                 $bodyHtml = str_replace('{LOGO_DATA_URI}', $cid, $body);
 
                 $message->to($request->email)
-                        ->subject("Kind Attention {$recipientName} - KK Cargo")
+                        ->subject("Kind Attention {$recipientName} - {$companyName}")
                         ->html($bodyHtml)
                         ->attach(base_path('pdf/kk.pdf'), [
                             'as'   => 'k k cargo profile.pdf',
