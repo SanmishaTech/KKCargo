@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useGetData } from "@/Components/HTTP/GET";
 import Dashboard from "./Dashboardreuse";
 import userAvatar from "@/images/Profile.jpg";
@@ -58,6 +58,58 @@ export default function Dashboardholiday() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState<{dateFilter?: string, companyType?: string, city?: string}>({});
 
+  // Memoized callback functions to prevent infinite re-renders
+  const onSuccess = useCallback((response: any) => {
+    if (!response?.data) return;
+
+    // Avoid updating state if data hasn't changed to prevent extra re-renders
+    setData((prev) => {
+      const newData = response.data.Company || [];
+      return JSON.stringify(prev) !== JSON.stringify(newData) ? newData : prev;
+    });
+
+    const pagination = response.data.Pagination || {};
+    const newPaginationState = {
+      currentPage: Number(pagination.current_page),
+      totalPages: Number(pagination.last_page),
+      perPage: Number(pagination.per_page),
+      total: Number(pagination.total),
+    };
+
+    // Only update pagination when something actually changed
+    setPaginationState((prev) => {
+      const isSame =
+        prev.currentPage === newPaginationState.currentPage &&
+        prev.totalPages === newPaginationState.totalPages &&
+        prev.perPage === newPaginationState.perPage &&
+        prev.total === newPaginationState.total;
+      return isSame ? prev : newPaginationState;
+    });
+  }, []);
+
+  const onError = useCallback((err: any) => {
+    console.error("Error fetching data:", err);
+    setError(err);
+  }, []);
+
+  // Memoized endpoint to prevent recreation on every render
+  const endpoint = useMemo(() => {
+    const params = new URLSearchParams()
+    if (searchQuery) params.set('search', searchQuery)
+    if (filter.dateFilter) params.set('date_filter', filter.dateFilter)
+    if (filter.companyType) params.set('company_type', filter.companyType)
+    if (filter.city) params.set('city', filter.city)
+    params.set('page', paginationState.currentPage.toString())
+    return `/api/companies?${params.toString()}`
+  }, [searchQuery, filter.dateFilter, filter.companyType, filter.city, paginationState.currentPage]);
+
+  // Memoized params object to prevent recreation on every render
+  const queryParams = useMemo(() => ({
+    queryKey: ["companies", searchQuery, filter, paginationState.currentPage],
+    onSuccess,
+    onError,
+  }), [searchQuery, filter, paginationState.currentPage, onSuccess, onError]);
+
   // Data fetching using shared GET hook
   const {
     data: apiResponse,
@@ -65,49 +117,8 @@ export default function Dashboardholiday() {
     isError: queryError,
     refetch,
   } = useGetData({
-    endpoint: (() => {
-      const params = new URLSearchParams()
-      if (searchQuery) params.set('search', searchQuery)
-      if (filter.dateFilter) params.set('date_filter', filter.dateFilter)
-      if (filter.companyType) params.set('company_type', filter.companyType)
-      if (filter.city) params.set('city', filter.city)
-      params.set('page', paginationState.currentPage.toString())
-      return `/api/companies?${params.toString()}`
-    })(),
-    params: {
-      queryKey: ["companies", searchQuery, filter, paginationState.currentPage],
-      onSuccess: (response: any) => {
-        if (!response?.data) return;
-
-        // Avoid updating state if data hasn't changed to prevent extra re-renders
-        setData((prev) => {
-          const newData = response.data.Company || [];
-          return JSON.stringify(prev) !== JSON.stringify(newData) ? newData : prev;
-        });
-
-        const pagination = response.data.Pagination || {};
-        const newPaginationState = {
-          currentPage: Number(pagination.current_page),
-          totalPages: Number(pagination.last_page),
-          perPage: Number(pagination.per_page),
-          total: Number(pagination.total),
-        } as typeof paginationState;
-
-        // Only update pagination when something actually changed
-        setPaginationState((prev) => {
-          const isSame =
-            prev.currentPage === newPaginationState.currentPage &&
-            prev.totalPages === newPaginationState.totalPages &&
-            prev.perPage === newPaginationState.perPage &&
-            prev.total === newPaginationState.total;
-          return isSame ? prev : newPaginationState;
-        });
-      },
-      onError: (err: any) => {
-        console.error("Error fetching data:", err);
-        setError(err);
-      },
-    },
+    endpoint,
+    params: queryParams,
   });
 
   useEffect(() => {
@@ -126,15 +137,13 @@ export default function Dashboardholiday() {
     setPaginationState((prev) => ({ ...prev, currentPage: page }));
   };
 
-  // Refetch whenever search query, filters, or page changes
-  useEffect(() => {
-    refetch();
-  }, [searchQuery, filter.dateFilter, filter.companyType, filter.city, paginationState.currentPage]);
+  // The useGetData hook will automatically refetch when queryParams change
+  // No need for manual refetch
 
-  const handleSearch = async (query: string) => {
+  const handleSearch = (query: string) => {
     setSearchQuery(query);
     setPaginationState((prev) => ({ ...prev, currentPage: 1 }));
-    await fetchData(query, 1);
+    // The useGetData hook will automatically refetch when queryParams change
   };
 
   const handleDateFilter = (dateValue: string) => {
@@ -167,7 +176,7 @@ export default function Dashboardholiday() {
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= paginationState.totalPages) {
       setPaginationState((prev) => ({ ...prev, currentPage: page }));
-      fetchData(searchQuery, page);
+      // No need to call fetchData here as the useGetData hook will automatically refetch when the page changes
     }
   };
 

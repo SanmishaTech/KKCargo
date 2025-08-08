@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useGetData } from "@/Components/HTTP/GET";
 import Dashboard from "./Dashboardreuse";
 import userAvatar from "@/images/Profile.jpg";
@@ -68,6 +68,47 @@ export default function Dashboardholiday() {
   });
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Memoized callback functions to prevent infinite re-renders
+  const onSuccess = useCallback((response: any) => {
+    if (!response?.data) return;
+
+    // Avoid updating state if data hasn't changed to prevent extra re-renders
+    setData((prev) => {
+      const newData = response.data.Staff || [];
+      return JSON.stringify(prev) !== JSON.stringify(newData) ? newData : prev;
+    });
+
+    const pagination = response.data.Pagination || {};
+    const newPaginationState = {
+      currentPage: Number(pagination.current_page),
+      totalPages: Number(pagination.last_page),
+      perPage: Number(pagination.per_page),
+      total: Number(pagination.total),
+    };
+
+    // Only update pagination when something actually changed
+    setPaginationState((prev) => {
+      const isSame =
+        prev.currentPage === newPaginationState.currentPage &&
+        prev.totalPages === newPaginationState.totalPages &&
+        prev.perPage === newPaginationState.perPage &&
+        prev.total === newPaginationState.total;
+      return isSame ? prev : newPaginationState;
+    });
+  }, []);
+
+  const onError = useCallback((err: any) => {
+    console.error("Error fetching data:", err);
+    setError(err);
+  }, []);
+
+  // Memoized params object to prevent recreation on every render
+  const queryParams = useMemo(() => ({
+    queryKey: ["staff", searchQuery, paginationState.currentPage],
+    onSuccess,
+    onError,
+  }), [searchQuery, paginationState.currentPage, onSuccess, onError]);
+
   // Data fetching using shared GET hook
   const {
     data: apiResponse,
@@ -76,40 +117,7 @@ export default function Dashboardholiday() {
     refetch,
   } = useGetData({
     endpoint: `/api/staff${searchQuery ? `?search=${searchQuery}&` : "?"}page=${paginationState.currentPage}`,
-    params: {
-      queryKey: ["staff", searchQuery, paginationState.currentPage],
-      onSuccess: (response: any) => {
-        if (!response?.data) return;
-
-        // Avoid updating state if data hasn't changed to prevent extra re-renders
-        setData((prev) => {
-          const newData = response.data.Staff || [];
-          return JSON.stringify(prev) !== JSON.stringify(newData) ? newData : prev;
-        });
-
-        const pagination = response.data.Pagination || {};
-        const newPaginationState = {
-          currentPage: Number(pagination.current_page),
-          totalPages: Number(pagination.last_page),
-          perPage: Number(pagination.per_page),
-          total: Number(pagination.total),
-        } as typeof paginationState;
-
-        // Only update pagination when something actually changed
-        setPaginationState((prev) => {
-          const isSame =
-            prev.currentPage === newPaginationState.currentPage &&
-            prev.totalPages === newPaginationState.totalPages &&
-            prev.perPage === newPaginationState.perPage &&
-            prev.total === newPaginationState.total;
-          return isSame ? prev : newPaginationState;
-        });
-      },
-      onError: (err: any) => {
-        console.error("Error fetching data:", err);
-        setError(err);
-      },
-    },
+    params: queryParams,
   });
 
   useEffect(() => {
@@ -128,15 +136,13 @@ export default function Dashboardholiday() {
     setPaginationState((prev) => ({ ...prev, currentPage: page }));
   };
 
-  // Refetch whenever search query or page changes
-  useEffect(() => {
-    refetch();
-  }, [searchQuery, paginationState.currentPage]);
+  // The useGetData hook will automatically refetch when queryParams change
+  // No need for manual refetch
 
-  const handleSearch = async (query: string) => {
+  const handleSearch = (query: string) => {
     setSearchQuery(query);
     setPaginationState((prev) => ({ ...prev, currentPage: 1 }));
-    await fetchData(query, 1);
+    // The useGetData hook will automatically refetch when queryParams change
   };
 
   const handleNextPage = () => {
@@ -154,7 +160,7 @@ export default function Dashboardholiday() {
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= paginationState.totalPages) {
       setPaginationState((prev) => ({ ...prev, currentPage: page }));
-      fetchData(searchQuery, page);
+      // No need to call fetchData here as the useGetData hook will automatically refetch when the page changes
     }
   };
 

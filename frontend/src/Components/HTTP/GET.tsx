@@ -72,7 +72,7 @@ const useGetData = ({
     if (queryResult.isError && params.onError) {
       params.onError(queryResult.error);
     }
-  }, [queryResult, params]);
+  }, [queryResult.isSuccess, queryResult.isError, queryResult.data, queryResult.error, params.onSuccess, params.onError]);
 
   return queryResult;
 };
