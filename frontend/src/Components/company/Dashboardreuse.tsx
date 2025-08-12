@@ -9,6 +9,7 @@ import {
   FileText,
   Files,
   FileSymlink,
+  Trash2,
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";
@@ -128,6 +129,8 @@ export default function Dashboard({
   const [handleopen, setHandleopen] = useState(false);
   const [toggleopen, setToggleopen] = useState(false);
   const [localSearchTerm, setLocalSearchTerm] = useState("");
+  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // Import dialog states
   const [importDialogOpen, setImportDialogOpen] = useState(false);
@@ -295,6 +298,60 @@ export default function Dashboard({
     }
   };
 
+  // Handle checkbox selection
+  const handleSelectRow = (rowId: string) => {
+    const newSelectedRows = new Set(selectedRows);
+    if (newSelectedRows.has(rowId)) {
+      newSelectedRows.delete(rowId);
+    } else {
+      newSelectedRows.add(rowId);
+    }
+    setSelectedRows(newSelectedRows);
+  };
+
+  // Handle select all checkbox
+  const handleSelectAll = () => {
+    if (selectedRows.size === tableData.length) {
+      setSelectedRows(new Set());
+    } else {
+      const allIds = tableData.map(row => row.id.toString());
+      setSelectedRows(new Set(allIds));
+    }
+  };
+
+  // Handle bulk delete
+  const handleBulkDelete = async () => {
+    if (selectedRows.size === 0) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      const idsArray = Array.from(selectedRows).map(id => parseInt(id));
+      
+      const response = await axios.post("/api/companies/bulk-delete", 
+        { ids: idsArray },
+        {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
+        }
+      );
+
+      toast.success(`${response.data.data.deleted_count} companies deleted successfully`);
+      setDeleteDialogOpen(false);
+      setSelectedRows(new Set());
+      
+      // Refresh the data
+      if (fetchData) {
+        await fetchData();
+      }
+      // Force a full page refresh to guarantee the UI shows updated data
+      window.location.reload();
+    } catch (error) {
+      console.error("Bulk delete failed:", error);
+      toast.error("Failed to delete companies");
+    }
+  };
+
    
   
 
@@ -429,6 +486,19 @@ export default function Dashboard({
                   </DialogContent>
                 </Dialog>
 
+                {/* Bulk Delete Button - only show when items are selected */}
+                {selectedRows.size > 0 && (
+                  <Button
+                    color="danger"
+                    variant="solid"
+                    startContent={<Trash2 size={16} />}
+                    onPress={() => setDeleteDialogOpen(true)}
+                    className="h-9"
+                  >
+                    Delete ({selectedRows.size})
+                  </Button>
+                )}
+
                 <Button
                   color="primary"
                   variant="solid"
@@ -480,6 +550,15 @@ export default function Dashboard({
                     <Table>
                       <TableHeader>
                         <TableRow className="bg-muted/40 hover:bg-muted/40">
+                          {/* Checkbox column header */}
+                          <TableHead className="text-xs font-medium text-muted-foreground py-3 w-12">
+                            <input
+                              type="checkbox"
+                              checked={tableData.length > 0 && selectedRows.size === tableData.length}
+                              onChange={handleSelectAll}
+                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                          </TableHead>
                           {tableColumns?.headers?.map((header, index) => (
                             <TableHead
                               key={index}
@@ -506,6 +585,15 @@ export default function Dashboard({
                         {tableData?.map((row) => (
                           <React.Fragment key={row.id}>
                             <TableRow>
+                              {/* Checkbox column */}
+                              <TableCell className="w-12">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedRows.has(row.id.toString())}
+                                  onChange={() => handleSelectRow(row.id.toString())}
+                                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                />
+                              </TableCell>
                               {tableColumns?.headers?.map((header, index) => (
                                 <TableCell
                                   key={index}
@@ -647,6 +735,36 @@ export default function Dashboard({
                  </div>
                  <DialogFooter>
                    <Button onPress={handleSendBrochure}>Send Mail</Button>
+                 </DialogFooter>
+               </DialogContent>
+             </Dialog>
+
+             {/* Bulk Delete Confirmation Dialog */}
+             <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+               <DialogContent className="bg-white">
+                 <DialogHeader>
+                   <DialogTitle>Confirm Bulk Delete</DialogTitle>
+                 </DialogHeader>
+                 <div className="py-4">
+                   <p className="text-sm text-gray-600">
+                     Are you sure you want to delete {selectedRows.size} selected companies? 
+                     This action cannot be undone.
+                   </p>
+                 </div>
+                 <DialogFooter className="flex gap-2">
+                   <Button 
+                     variant="flat" 
+                     onPress={() => setDeleteDialogOpen(false)}
+                   >
+                     Cancel
+                   </Button>
+                   <Button 
+                     color="danger" 
+                     variant="solid"
+                     onPress={handleBulkDelete}
+                   >
+                     Delete Companies
+                   </Button>
                  </DialogFooter>
                </DialogContent>
              </Dialog>

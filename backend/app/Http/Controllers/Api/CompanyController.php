@@ -254,6 +254,33 @@ class CompanyController extends BaseController
          return $this->sendResponse([], "Company deleted successfully");
     }
 
+    /**
+     * Bulk delete multiple companies
+     */
+    public function bulkDelete(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'ids' => 'required|array',
+            'ids.*' => 'required|integer|exists:companies,id',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError('Validation Error', $validator->errors(), 422);
+        }
+
+        try {
+            $ids = $request->input('ids');
+            $deletedCount = Company::whereIn('id', $ids)->delete();
+            
+            return $this->sendResponse(
+                ['deleted_count' => $deletedCount], 
+                "{$deletedCount} companies deleted successfully"
+            );
+        } catch (\Exception $e) {
+            return $this->sendError('Delete Error', ['error' => $e->getMessage()], 500);
+        }
+    }
+
     public function allCompany(): JsonResponse
     {
       

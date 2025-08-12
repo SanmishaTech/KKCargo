@@ -29,8 +29,10 @@ Route::group(['middleware'=>['auth:sanctum', 'permission','request.null']], func
     // Company types dropdown
    Route::get('/company-types', [CompanyController::class, 'types'])->name('companies.types');
    Route::delete('/company-types', [CompanyController::class, 'deleteType'])->name('companies.types.delete');
-    // Company cities dropdown
+   // Company cities dropdown
    Route::get('/company-cities', [CompanyController::class, 'cities'])->name('companies.cities');
+   // Bulk delete companies
+   Route::post('/companies/bulk-delete', [CompanyController::class, 'bulkDelete'])->name('companies.bulk-delete');
     // Company resource routes
    Route::resource('companies', CompanyController::class);
    //followup

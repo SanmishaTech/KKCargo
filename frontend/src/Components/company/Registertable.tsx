@@ -317,7 +317,7 @@ export default function Dashboardholiday() {
       // Format as "MONTH YEAR" i.e. "JULY 2025"
       const month = date.toLocaleString("en-US", { month: "long" }).toUpperCase();
       const year = date.getFullYear();
-      return `${month} ${year}`;
+      return `${date.getDate()} ${month} ${year}`;
     };
 
     const mobileNumber = item?.contact_mobile;
