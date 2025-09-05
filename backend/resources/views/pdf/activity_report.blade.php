@@ -161,7 +161,7 @@
     </div>
 
     <div class="section">
-        <h2>Recent Activities (Latest 20)</h2>
+        <h2>Recent Activities</h2>
         @if($summary['latest']->count() > 0)
             <table>
                 <thead>
