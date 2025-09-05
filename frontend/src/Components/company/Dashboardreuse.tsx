@@ -10,6 +10,7 @@ import {
   Files,
   FileSymlink,
   Trash2,
+  Send,
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";
@@ -142,6 +143,12 @@ export default function Dashboard({
   const [brochureEmail, setBrochureEmail] = useState<string>("");
   const [brochureRow, setBrochureRow] = useState<any>(null);
 
+  // Remark dialog states
+  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false);
+  const [remarkLoading, setRemarkLoading] = useState(false);
+  const [remarkData, setRemarkData] = useState<any>(null);
+  const [remarkRow, setRemarkRow] = useState<any>(null);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setSelectedFile(e.target.files[0]);
@@ -207,7 +214,10 @@ export default function Dashboard({
 
   const handleSendBrochureClick = (row: any) => {
     setBrochureRow(row);
-    setBrochureEmail(row?.two || ""); // assuming 'two' holds email
+    // 'six' holds the Email in mappedTableData from Registertable.tsx
+    const maybeEmail = row?.six;
+    const email = typeof maybeEmail === "string" && maybeEmail.includes("@") && maybeEmail !== "NA" ? maybeEmail : "";
+    setBrochureEmail(email);
     setBrochureDialogOpen(true);
   };
 
@@ -229,6 +239,36 @@ export default function Dashboard({
     } catch (error) {
       console.error("Failed to send brochure", error);
       toast.error("Failed to send brochure");
+    }
+  };
+
+  // Open remark dialog and fetch the latest remark for a company
+  const handleRemarkClick = async (row: any) => {
+    try {
+      setRemarkRow(row);
+      setRemarkDialogOpen(true);
+      setRemarkLoading(true);
+      setRemarkData(null);
+      const token = localStorage.getItem("token");
+      const response = await axios.get(`/api/followup?company_id=${row?.id}` , {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : undefined,
+        },
+      });
+      const list = response?.data?.data?.Followup || [];
+      let latest = null;
+      if (Array.isArray(list) && list.length > 0) {
+        latest = [...list].sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        )[0];
+      }
+      setRemarkData(latest);
+    } catch (error) {
+      console.error("Failed to load remark", error);
+      toast.error("Failed to load remark");
+      setRemarkData(null);
+    } finally {
+      setRemarkLoading(false);
     }
   };
 
@@ -664,14 +704,28 @@ export default function Dashboard({
                                           </DropdownMenu>
                                         </Dropdown>
                                       ) : null;
+                                    } else if (header.key === "remark") {
+                                      return (
+                                        <Button
+                                          size="sm"
+                                          variant="flat"
+                                          isIconOnly
+                                          aria-label="View Remark"
+                                          onPress={() => handleRemarkClick(row)}
+                                        >
+                                          <FileText size={16} />
+                                        </Button>
+                                      );
                                     } else if (header.key === "send_brochure") {
                                       return (
                                         <Button
                                           size="sm"
                                           variant="flat"
+                                          isIconOnly
+                                          aria-label="Send Brochure"
                                           onPress={() => handleSendBrochureClick(row)}
                                         >
-                                          Send Brochure
+                                          <Send size={16} />
                                         </Button>
                                       );
                                     } else {
@@ -734,7 +788,64 @@ export default function Dashboard({
                    />
                  </div>
                  <DialogFooter>
-                   <Button onPress={handleSendBrochure}>Send Mail</Button>
+                   <Button startContent={<Send size={16} />} onPress={handleSendBrochure}>Send Mail</Button>
+                 </DialogFooter>
+               </DialogContent>
+             </Dialog>
+
+             {/* Remark Dialog */}
+             <Dialog open={remarkDialogOpen} onOpenChange={setRemarkDialogOpen}>
+               <DialogContent className="bg-white">
+                 <DialogHeader>
+                   <DialogTitle>Latest Remark</DialogTitle>
+                   {remarkRow?.two && (
+                     <p className="text-sm text-muted-foreground">{remarkRow.two}</p>
+                   )}
+                 </DialogHeader>
+                 <div className="space-y-4 py-1">
+                   {remarkLoading ? (
+                     <p className="text-sm text-muted-foreground">Loading...</p>
+                   ) : remarkData ? (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+                        <div className="text-muted-foreground">Follow-Up Type</div>
+                        <div className="sm:col-span-2">
+                          {remarkData.follow_up_type ? (
+                            <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800">
+                              {remarkData.follow_up_type}
+                            </span>
+                          ) : (
+                            "-"
+                          )}
+                        </div>
+
+                        <div className="text-muted-foreground">Follow-Up Date</div>
+                        <div className="sm:col-span-2">
+                          {remarkData.follow_up_date
+                            ? new Date(remarkData.follow_up_date).toLocaleDateString()
+                            : "-"}
+                        </div>
+
+                        <div className="text-muted-foreground">Created At</div>
+                        <div className="sm:col-span-2 text-muted-foreground">
+                          {remarkData.created_at
+                            ? new Date(remarkData.created_at).toLocaleString()
+                            : "-"}
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-xs uppercase tracking-wide text-muted-foreground">Remark</div>
+                        <div className="rounded-md border bg-muted/30 p-3">
+                          <p className="text-sm leading-relaxed">{remarkData.remarks || "-"}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No remarks found for this company.</p>
+                  )}
+                 </div>
+                 <DialogFooter>
+                   <Button variant="flat" onPress={() => setRemarkDialogOpen(false)}>Okay</Button>
                  </DialogFooter>
                </DialogContent>
              </Dialog>

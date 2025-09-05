@@ -201,6 +201,7 @@ export default function Dashboardholiday() {
           { label: "Email", key: "six" },
           { label: "Contact Person", key: "seven" },
           { label: "Mobile", key: "eight" },
+          { label: "Remark", key: "remark" },
           { label: "Send Brochure", key: "send_brochure" },
           { label: "Status", key: "nine" },
           { label: "Action", key: "action" },
