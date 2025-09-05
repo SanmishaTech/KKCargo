@@ -11,6 +11,7 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Mail;
 use App\Http\Controllers\Api\BaseController;
+use App\Services\ActivityLogger;
 
 class CompanyController extends BaseController
 {
@@ -110,6 +111,9 @@ class CompanyController extends BaseController
         $company->status = 'waiting';
 
          $company->save();
+
+        // Log company creation
+        ActivityLogger::log('company.created', $company, 'Company created', ['company_name' => $company->company_name]);
         
         return $this->sendResponse([new CompanyResource($company)], "Company stored successfully");
     }
@@ -167,6 +171,9 @@ class CompanyController extends BaseController
 
            
         $company->save();
+
+        // Log company update
+        ActivityLogger::log('company.updated', $company, 'Company updated', ['company_name' => $company->company_name]);
        
         return $this->sendResponse([ new CompanyResource($company)], "Company updated successfully");
 
@@ -251,6 +258,9 @@ class CompanyController extends BaseController
             return $this->sendError("Company not found", ['error'=> 'Company not found']);
         }
          $company->delete();
+
+         // Log company deletion
+         ActivityLogger::log('company.deleted', 'App\\Models\\Company', 'Company deleted', ['company_id' => (int)$id]);
          return $this->sendResponse([], "Company deleted successfully");
     }
 
@@ -272,6 +282,9 @@ class CompanyController extends BaseController
             $ids = $request->input('ids');
             $deletedCount = Company::whereIn('id', $ids)->delete();
             
+            // Log bulk delete
+            ActivityLogger::log('company.bulk_deleted', 'App\\Models\\Company', 'Bulk delete companies', ['ids' => $ids, 'deleted_count' => $deletedCount]);
+
             return $this->sendResponse(
                 ['deleted_count' => $deletedCount], 
                 "{$deletedCount} companies deleted successfully"
@@ -396,6 +409,9 @@ EOT;
                 $company->save();
             }
 
+            // Log brochure sent
+            ActivityLogger::log('brochure.sent', $company, 'Brochure sent', ['email' => $request->email]);
+
             return $this->sendResponse([], 'Brochure sent successfully');
         } catch (\Exception $e) {
             return $this->sendError('Mail Error', ['error' => $e->getMessage()], 500);
@@ -493,6 +509,8 @@ EOT;
                     $message = "Imported {$importCount} companies with some errors.";
                 }
             }
+            // Log import
+            ActivityLogger::log('company.imported', 'App\\Models\\Company', 'Company import completed', ['imported_count' => $importCount, 'error_rows' => $errorRows]);
             
             return $this->sendResponse($response, $message);
             

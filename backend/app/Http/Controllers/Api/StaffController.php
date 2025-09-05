@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Log;
 use Mpdf\Mpdf;
+use App\Services\ActivityLogger;
 
  
 class StaffController extends BaseController
@@ -96,7 +97,8 @@ public function index(Request $request): JsonResponse
         $staff->mobile = $request->input('mobile');
          $staff->save();
 
-     
+        // Log staff creation
+        ActivityLogger::log('staff.created', $staff, 'Staff created', ['user_id' => $user->id]);
         
         return response()->json([
             'status' => true,
@@ -186,7 +188,8 @@ public function index(Request $request): JsonResponse
          
         $staff->save();
 
-      
+        // Log staff update
+        ActivityLogger::log('staff.updated', $staff, 'Staff updated', ['user_id' => $user->id]);
        
         return response()->json([
             'status' => true,
@@ -214,6 +217,10 @@ public function index(Request $request): JsonResponse
         $user = User::find($staff->user_id);
         $staff->delete();
         $user->delete();
+
+        // Log staff deletion
+        ActivityLogger::log('staff.deleted', 'App\\Models\\Staff', 'Staff deleted', ['staff_id' => (int)$id]);
+
         return response()->json([
             'status' => true,
             'message' => "Staff deleted successfully",

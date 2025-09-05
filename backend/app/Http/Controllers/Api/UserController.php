@@ -18,6 +18,7 @@ use App\Http\Resources\StaffResource;
 use App\Http\Resources\ProfileResource;
 use App\Http\Resources\EmployeeResource;
 use App\Http\Controllers\Api\BaseController;
+use App\Services\ActivityLogger;
 
 class UserController extends BaseController
 {
@@ -40,6 +41,8 @@ class UserController extends BaseController
             $user = Auth::user();
             $token =  $user->createToken($user->name)->plainTextToken;
             $staff = Staff::where('user_id', $user->id)->first();
+            // Log login activity
+            ActivityLogger::log('login', $user, 'User logged in');
             // dd($user->id);
             return $this->sendResponse(['User'=>new UserResource($user), 'token'=>$token], 'User login successfully.');
             

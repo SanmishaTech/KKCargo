@@ -17,6 +17,7 @@ import { Route as LoginIndexImport } from './routes/login/index'
 import { Route as FollowUpIndexImport } from './routes/follow-up/index'
 import { Route as DashboardsIndexImport } from './routes/dashboards/index'
 import { Route as CompanyIndexImport } from './routes/company/index'
+import { Route as ActivityLogIndexImport } from './routes/activity-log/index'
 import { Route as StaffAddIndexImport } from './routes/staff/add/index'
 import { Route as CompanyAddIndexImport } from './routes/company/add/index'
 import { Route as StaffEditIdImport } from './routes/staff/edit/$id'
@@ -60,6 +61,12 @@ const CompanyIndexRoute = CompanyIndexImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
+const ActivityLogIndexRoute = ActivityLogIndexImport.update({
+  id: '/activity-log/',
+  path: '/activity-log/',
+  getParentRoute: () => rootRoute,
+} as any)
+
 const StaffAddIndexRoute = StaffAddIndexImport.update({
   id: '/staff/add/',
   path: '/staff/add/',
@@ -93,6 +100,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/activity-log/': {
+      id: '/activity-log/'
+      path: '/activity-log'
+      fullPath: '/activity-log'
+      preLoaderRoute: typeof ActivityLogIndexImport
       parentRoute: typeof rootRoute
     }
     '/company/': {
@@ -165,6 +179,7 @@ declare module '@tanstack/react-router' {
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/activity-log': typeof ActivityLogIndexRoute
   '/company': typeof CompanyIndexRoute
   '/dashboards': typeof DashboardsIndexRoute
   '/follow-up': typeof FollowUpIndexRoute
@@ -178,6 +193,7 @@ export interface FileRoutesByFullPath {
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/activity-log': typeof ActivityLogIndexRoute
   '/company': typeof CompanyIndexRoute
   '/dashboards': typeof DashboardsIndexRoute
   '/follow-up': typeof FollowUpIndexRoute
@@ -192,6 +208,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
+  '/activity-log/': typeof ActivityLogIndexRoute
   '/company/': typeof CompanyIndexRoute
   '/dashboards/': typeof DashboardsIndexRoute
   '/follow-up/': typeof FollowUpIndexRoute
@@ -207,6 +224,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/activity-log'
     | '/company'
     | '/dashboards'
     | '/follow-up'
@@ -219,6 +237,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/activity-log'
     | '/company'
     | '/dashboards'
     | '/follow-up'
@@ -231,6 +250,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/activity-log/'
     | '/company/'
     | '/dashboards/'
     | '/follow-up/'
@@ -245,6 +265,7 @@ export interface FileRouteTypes {
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ActivityLogIndexRoute: typeof ActivityLogIndexRoute
   CompanyIndexRoute: typeof CompanyIndexRoute
   DashboardsIndexRoute: typeof DashboardsIndexRoute
   FollowUpIndexRoute: typeof FollowUpIndexRoute
@@ -258,6 +279,7 @@ export interface RootRouteChildren {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ActivityLogIndexRoute: ActivityLogIndexRoute,
   CompanyIndexRoute: CompanyIndexRoute,
   DashboardsIndexRoute: DashboardsIndexRoute,
   FollowUpIndexRoute: FollowUpIndexRoute,
@@ -280,6 +302,7 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/",
+        "/activity-log/",
         "/company/",
         "/dashboards/",
         "/follow-up/",
@@ -293,6 +316,9 @@ export const routeTree = rootRoute
     },
     "/": {
       "filePath": "index.tsx"
+    },
+    "/activity-log/": {
+      "filePath": "activity-log/index.tsx"
     },
     "/company/": {
       "filePath": "company/index.tsx"

@@ -11,11 +11,14 @@ class Kernel extends ConsoleKernel
         // Register your custom command here, like:
         
         \App\Console\Commands\RunCommands::class,
+        \App\Console\Commands\SendActivityReport::class,
     ];
 
     protected function schedule(Schedule $schedule)
     {
-        // You can schedule tasks here if needed.
+        // Daily activity report at configured time (default 12:00)
+        $time = env('ACTIVITY_LOG_REPORT_TIME', '12:00');
+        $schedule->command('activity:email-report')->dailyAt($time);
     }
 
     protected function commands()

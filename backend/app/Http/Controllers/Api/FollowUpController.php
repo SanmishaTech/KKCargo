@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Api\BaseController;
  use App\Http\Resources\FollowupResource;
+use App\Services\ActivityLogger;
 
 class FollowUpController extends BaseController
 {
@@ -49,6 +50,9 @@ class FollowUpController extends BaseController
          $followup->follow_up_type = $request->input('follow_up_type');
          $followup->remarks = $request->input('remarks');
          $followup->save();
+
+        // Log followup created
+        ActivityLogger::log('followup.created', $followup, 'Follow-up created', ['company_id' => $followup->company_id]);
         
         return $this->sendResponse([new FollowupResource($followup)], "Followup stored successfully");
     }
@@ -84,6 +88,9 @@ class FollowUpController extends BaseController
         $followup->remarks = $request->input('remarks');
            
         $followup->save();
+
+        // Log followup updated
+        ActivityLogger::log('followup.updated', $followup, 'Follow-up updated', ['company_id' => $followup->company_id]);
        
         return $this->sendResponse([ new FollowupResource($followup)], "Followup updated successfully");
 
@@ -97,6 +104,9 @@ class FollowUpController extends BaseController
             return $this->sendError("Followup not found", ['error'=> 'Followup not found']);
         }
          $followup->delete();
+
+         // Log followup deleted
+         ActivityLogger::log('followup.deleted', 'App\\Models\\FollowUp', 'Follow-up deleted', ['followup_id' => (int)$id]);
          return $this->sendResponse([], "Followup deleted successfully");
     }
 

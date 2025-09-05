@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\StaffController;
 use App\Http\Controllers\Api\CompanyController;
 use App\Http\Controllers\Api\FollowUpController;
 use App\Http\Controllers\Api\DashboardController; 
+use App\Http\Controllers\Api\ActivityLogController;
 
 
  
@@ -43,7 +44,10 @@ Route::group(['middleware'=>['auth:sanctum', 'permission','request.null']], func
    // Dashboard route
    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.data');
 
-   
+   // Activity Logs (admin-only enforced in controller)
+   Route::get('/activity-logs', [ActivityLogController::class, 'index'])->withoutMiddleware('permission')->name('activity-logs.index');
+   Route::post('/activity-logs/send-report', [ActivityLogController::class, 'sendReport'])->withoutMiddleware('permission')->name('activity-logs.send-report');
+
 
 
 });

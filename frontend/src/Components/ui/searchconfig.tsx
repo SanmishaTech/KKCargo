@@ -49,6 +49,11 @@ export const searchconfig: Record<string, MenuItem[]> = {
       url: "/company",
       icon: Building,
     },
+    {
+      title: "Activity Log",
+      url: "/activity-log",
+      icon: FileText,
+    },
   ],
   staff: [
     {
