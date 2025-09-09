@@ -2,13 +2,13 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, ControllerRenderProps } from "react-hook-form";
 import { z } from "zod";
-import { Button } from "@/Components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "@/Components/ui/card";
+} from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -16,24 +16,25 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/Components/ui/form";
-import { Input } from "@/Components/ui/input";
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/Components/ui/select";
-import { Textarea } from "@/Components/ui/textarea";
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { AxiosError } from "axios";
 import { usePostData } from "@/Components/HTTP/POST";
 import { toast } from "sonner";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/Components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGetData } from "@/Components/HTTP/GET";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/Components/ui/table";
-import { Skeleton } from "@/Components/ui/skeleton";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 
 const followUpFormSchema = z.object({
   follow_up_date: z.string().nonempty("Follow Up Date is Required"),
@@ -53,8 +54,6 @@ interface FollowUp {
   created_at: string;
 }
 
-
-
 const defaultValues: Partial<FollowUpFormValues> = {
   follow_up_date: new Date().toISOString().split('T')[0],
   next_follow_up_date: "",
@@ -62,7 +61,7 @@ const defaultValues: Partial<FollowUpFormValues> = {
   remarks: "",
 };
 
-function FollowUpForm({ companyId }: { companyId?: number }) {
+export function FollowUpForm({ companyId, onSuccess, onCancel }: { companyId?: number; onSuccess?: () => void; onCancel?: () => void }) {
   const form = useForm<FollowUpFormValues>({
     resolver: zodResolver(followUpFormSchema),
     defaultValues,
@@ -76,6 +75,7 @@ function FollowUpForm({ companyId }: { companyId?: number }) {
       onSuccess: () => {
         toast.success("Follow-up added successfully");
         form.reset();
+        if (onSuccess) onSuccess();
       },
       onError: (error: AxiosError | any) => {
         if (error.response) {
@@ -110,29 +110,31 @@ function FollowUpForm({ companyId }: { companyId?: number }) {
             <CardTitle>Follow Up Form</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <FormField
-                control={form.control}
-                name="follow_up_date"
-                render={({ field }: { field: ControllerRenderProps<FollowUpFormValues, "follow_up_date"> }) => (
-                  <FormItem>
-                    <FormLabel>Follow Up Date</FormLabel>
-                    <Input type="date" {...field} />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="next_follow_up_date"
-                render={({ field }: { field: ControllerRenderProps<FollowUpFormValues, "next_follow_up_date"> }) => (
-                  <FormItem>
-                    <FormLabel>Next Follow Up Date</FormLabel>
-                    <Input type="date" {...field} />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <div className="grid grid-cols-1 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="follow_up_date"
+                  render={({ field }: { field: ControllerRenderProps<FollowUpFormValues, "follow_up_date"> }) => (
+                    <FormItem>
+                      <FormLabel>Follow Up Date</FormLabel>
+                      <Input type="date" {...field} />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="next_follow_up_date"
+                  render={({ field }: { field: ControllerRenderProps<FollowUpFormValues, "next_follow_up_date"> }) => (
+                    <FormItem>
+                      <FormLabel>Next Follow Up Date</FormLabel>
+                      <Input type="date" {...field} />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
               <FormField
                 control={form.control}
                 name="follow_up_type"
@@ -171,7 +173,7 @@ function FollowUpForm({ companyId }: { companyId?: number }) {
               />
             </div>
             <div className="flex justify-end gap-4 mt-6">
-              <Button type="button" variant="outline" onClick={() => form.reset()}>
+              <Button type="button" variant="outline" onClick={() => (onCancel ? onCancel() : form.reset())}>
                 Cancel
               </Button>
               <Button type="submit">Submit</Button>
@@ -217,7 +219,7 @@ function FollowUpHistorySkeleton() {
 function FollowUpHistory({ companyId }: { companyId?: number }) {
   const { data, isLoading, error } = useGetData({
      endpoint: `/api/followup?company_id=${companyId}`,
-     params: { queryKey: ['followups', companyId], enabled: !!companyId }
+     params: { queryKey: ['followups', String(companyId ?? '')], enabled: !!companyId }
   });
   const [followUps, setFollowUps] = useState<FollowUp[]>([]);
 
@@ -270,6 +272,7 @@ function FollowUpHistory({ companyId }: { companyId?: number }) {
 }
 
 export default function Followup({ companyId }: { companyId?: number }) {
+  const navigate = useNavigate();
   return (
     <div className="p-4 md:p-6">
       <Tabs defaultValue="add">
@@ -280,7 +283,7 @@ export default function Followup({ companyId }: { companyId?: number }) {
           </TabsList>
         </div>
         <TabsContent value="add">
-          <FollowUpForm companyId={companyId} />
+          <FollowUpForm companyId={companyId} onCancel={() => navigate({ to: "/company" })} />
         </TabsContent>
         <TabsContent value="history">
           <FollowUpHistory companyId={companyId} />
