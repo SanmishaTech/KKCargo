@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('address')->nullable();
             $table->string('mobile')->nullable();
             $table->string('email')->nullable();
+            $table->string('role')->default('staff');
             $table->timestamps();
         });
     }

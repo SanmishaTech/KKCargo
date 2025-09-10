@@ -1,4 +1,5 @@
 import { Link, Navigate } from "react-router-dom";
+import type { FormEvent } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, ControllerRenderProps, useFieldArray } from "react-hook-form";
 import { z } from "zod";
@@ -33,22 +34,41 @@ import { AxiosError } from "axios";
 import { usePostData } from "@/Components/HTTP/POST";
 import { toast } from "sonner";
 
- 
+// Helper validators
+// Required: coerce null/undefined to empty string and enforce non-empty
+const requiredString = (message: string) =>
+  z.preprocess((val) => (val == null ? "" : val), z.string().trim().min(1, message));
+// Optional: treat empty string/null/undefined as undefined
+const optionalString = () =>
+  z.preprocess(
+    (val) => (val === "" || val == null ? undefined : val),
+    z.string().trim().optional()
+  );
+
 const profileFormSchema = z.object({
-  staff_name: z.string().nonempty("Name is Required"),
-  employee_code: z.string().nonempty("Employee Code is Required"),
-   date_of_birth: z.any().optional(),
-   academic_years_id: z.any().optional(),
-  address: z.string().nonempty("Address is Required"),
-  mobile: z.string().optional(),
-  email: z
-    .string()
-    .nonempty("Email is required")
-    .email("Invalid email address"),
-  password: z.string().nonempty("Password is required"),
-  role: z.string().nonempty("Role is required"),
-  
- });
+  staff_name: requiredString("Name is Required"),
+  employee_code: optionalString(),
+  date_of_birth: z.preprocess(
+    (val) => (val === "" || val == null ? undefined : val),
+    z.string().trim().optional()
+  ),
+  academic_years_id: z.any().optional(),
+  address: optionalString(),
+  mobile: z.preprocess(
+    (val) => (val === "" || val == null ? undefined : val),
+    z
+      .string()
+      .trim()
+      .regex(/^[0-9]{10}$/, "Mobile number must be exactly 10 digits and contain only numbers")
+      .optional()
+  ),
+  email: z.preprocess(
+    (val) => (val == null ? "" : val),
+    z.string().trim().min(1, "Email is required").email("Invalid email address")
+  ),
+  password: requiredString("Password is required"),
+  role: requiredString("Role is required"),
+});
 
 type ProfileFormValues = z.infer<typeof profileFormSchema> & {
   userId?: string;
@@ -57,13 +77,14 @@ type ProfileFormValues = z.infer<typeof profileFormSchema> & {
 
 // This can come from your database or API.
 const defaultValues: Partial<ProfileFormValues> = {
-  role: "staff",  
-   staff_name: "",
-   employee_code: "",
-   address: "",
+  role: "staff",
+  staff_name: "",
+  employee_code: "",
+  address: "",
   mobile: "",
   email: "",
-  password: ""
+  password: "",
+  date_of_birth: "",
 };
 
 function ProfileForm() {
@@ -166,7 +187,7 @@ function ProfileForm() {
                   name="employee_code"
                   render={({ field }) => (
                     <FormItem >
-                      <FormLabel >Employee Code<span className="text-red-500">*</span></FormLabel>
+                      <FormLabel >Employee Code</FormLabel>
                       <FormControl>
                         <Input placeholder="Enter Employee Code..." {...field} />
                       </FormControl>
@@ -177,24 +198,16 @@ function ProfileForm() {
                 <FormField
                   control={form.control}
                   name="mobile"
-                  rules={{
-                    required: "Mobile number is required",
-                    pattern: {
-                      value: /^[0-9]{10}$/, // Ensures exactly 10 numeric digits
-                      message:
-                        "Mobile number must be exactly 10 digits and contain only numbers",
-                    },
-                  }}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Mobile<span className="text-red-500">*</span></FormLabel>
+                      <FormLabel>Mobile</FormLabel>
                       <FormControl>
                         <Input
                           type="text"
                           placeholder="Enter 10-digit mobile number"
                           maxLength={10} // Prevents input beyond 10 characters
-                          onInput={(e) => {
-                            e.target.value = e.target.value.replace(/\D/g, ""); // Removes non-numeric characters
+                          onInput={(e: FormEvent<HTMLInputElement>) => {
+                            e.currentTarget.value = e.currentTarget.value.replace(/\D/g, ""); // Removes non-numeric characters
                           }}
                           {...field}
                         />
@@ -210,8 +223,9 @@ function ProfileForm() {
                   render={({ field }: { field: ControllerRenderProps<ProfileFormValues, "role"> }) => (
                     <FormItem className="">
                       <FormLabel>Role<span className="text-red-500">*</span></FormLabel>
-                      <Select 
-                      
+                      <Select
+                        onValueChange={(value: string) => field.onChange(value)}
+                        value={field.value}
                         defaultValue={field.value}
                       >
                         <FormControl>
@@ -244,7 +258,7 @@ function ProfileForm() {
     return (
       <FormItem>
         <FormLabel>
-          Date of Birth<span className="text-red-500">*</span>
+          Date of Birth
         </FormLabel>
         <FormControl>
           <Input
@@ -265,7 +279,7 @@ function ProfileForm() {
                 name="address"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Address<span className="text-red-500">*</span></FormLabel>
+                    <FormLabel>Address</FormLabel>
                     <FormControl>
                       <Textarea placeholder="Address..." {...field} />
                     </FormControl>

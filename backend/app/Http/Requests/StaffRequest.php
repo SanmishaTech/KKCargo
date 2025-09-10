@@ -33,6 +33,12 @@ class StaffRequest extends FormRequest
                 'max:255',
                 Rule::unique('users', 'email')->ignore($staffId),
             ],
+            // Optional on update/store; controller defaults to 'staff' when not provided
+            'role' => [
+                'sometimes',
+                'string',
+                Rule::exists('roles', 'name'),
+            ],
         ];
 
         return $rules;

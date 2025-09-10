@@ -95,6 +95,8 @@ public function index(Request $request): JsonResponse
         $staff->address = $request->input('address');
         $staff->email = $request->input('email');
         $staff->mobile = $request->input('mobile');
+        // Persist role on staff as well
+        $staff->role = $roleName;
          $staff->save();
 
         // Log staff creation
@@ -185,6 +187,8 @@ public function index(Request $request): JsonResponse
         $staff->address = $request->input('address');
         $staff->email = $request->input('email');
         $staff->mobile = $request->input('mobile');
+        // keep staff.role synchronized with requested role
+        $staff->role = $roleName;
          
         $staff->save();
 

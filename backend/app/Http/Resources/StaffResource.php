@@ -19,13 +19,14 @@ class StaffResource extends JsonResource
         $user = new UserResource(User::find($this->user_id));
 
         $user = User::find($this->user_id);
-        $role = $user ? $user->getRoleNames()->first() : null;
+        $spatieRole = $user ? $user->getRoleNames()->first() : null;
+        $role = $this->role ?: $spatieRole;
 
         return [
             'id' => $this->id,
             'user_id' => $this->user_id,
             'name' => $user ? $user->name : null,   
-             'role'         => $role,
+            'role' => $role,
             'staff_name' =>$this->staff_name,
             'mobile' => $this->mobile,
             'employee_code' => $this->employee_code,

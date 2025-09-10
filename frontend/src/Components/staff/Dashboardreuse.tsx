@@ -49,6 +49,7 @@ import {
   Mail,
   Image,
   Files,
+  FileText,
   FileQuestion,
   FileSymlink,
   Settings,
@@ -69,6 +70,43 @@ import {
 
 export const description =
   "A reusable registrations dashboard with customizable header and table. Configure breadcrumbs, search, tabs, and table data through props.";
+
+type BreadcrumbType = { label: string; href?: string };
+type TableHeader = { label: string; key: string; hiddenOn?: string; sortable?: boolean };
+type TableColumnsType = {
+  title?: string;
+  description?: string;
+  headers?: TableHeader[];
+  actions?: { label: string; value: string }[];
+  pagination?: any;
+};
+
+type DashboardProps = {
+  breadcrumbs?: BreadcrumbType[];
+  searchPlaceholder?: string;
+  fetchData?: any;
+  userAvatar?: string;
+  tableColumns?: TableColumnsType;
+  AddItem?: any;
+  Edititem?: any;
+  filterValue?: any;
+  typeofschema?: any;
+  handleNextPage?: () => void;
+  totalPages?: number;
+  setSearch?: any;
+  setCurrentPage?: (page: number) => void;
+  Searchitem?: any;
+  currentPage?: number;
+  handlePrevPage?: () => void;
+  tableData?: any[];
+  onAddProduct?: () => void;
+  onExport?: () => void;
+  onFilterChange?: (...args: any[]) => void;
+  onProductAction?: (...args: any[]) => void;
+  onSearch?: (s: string) => void;
+  onKeyPress?: any;
+  searchQuery?: any;
+};
 
 export default function Dashboard({
   breadcrumbs = [],
@@ -95,7 +133,7 @@ export default function Dashboard({
   onSearch,
   onKeyPress,
   searchQuery,
-}) {
+}: DashboardProps) {
    const navigate = useNavigate();
   const [toggleedit, setToggleedit] = useState(false);
   const [editid, setEditid] = useState();
@@ -111,28 +149,6 @@ export default function Dashboard({
   // State to manage expanded rows (array of id)
   const [expandedRows, setExpandedRows] = useState([]);
   
-  // Helper function to check if a row has admin role
-  const hasAdminRole = (row: any) => {
-    // Check various possible ways the role might be stored
-    if (!row) return false;
-    
-    // Check common properties that might contain role information
-    if (row.role === 'admin') return true;
-    if (row.userRole === 'admin') return true;
-    if (row.type === 'admin') return true;
-    if (row.user_role === 'admin') return true;
-    
-    // If there's a specific column for role in the data
-    for (const key in row) {
-      if (typeof row[key] === 'string' && 
-          (row[key].toLowerCase() === 'admin' || 
-           key.toLowerCase().includes('role') && row[key] === 'admin')) {
-        return true;
-      }
-    }
-    
-    return false;
-  };
 
   // Handler to toggle row expansion with debug logs
   const toggleRow = (rowId: string) => {
@@ -339,37 +355,36 @@ export default function Dashboard({
                                   {header.key === "one" ? (
                                     row.one
                                   ) : header.key === "action" ? (
-                                    // Only show action button if the row doesn't have admin role
-                                    !hasAdminRole(row) ? (
-                                      <Dropdown backdrop="blur" showArrow>
-                                        <DropdownTrigger>
-                                          <button className="p-1 rounded-full opacity-100 group-hover:opacity-100 transition-opacity hover:bg-muted">
-                                            <Ellipsis className="w-5 h-5 text-muted-foreground" />
-                                          </button>
-                                        </DropdownTrigger>
-                                        <DropdownMenu
-                                          aria-label="Actions"
-                                          variant="faded"
-                                          className="w-56"
-                                        >
-                                          <DropdownSection title="Actions">
-                                            <DropdownItem
-                                              key="edit"
-                                              description="Edit staff details"
-                                              onPress={() =>
-                                                navigate({
-                                                  to: "/staff/edit/" + row?.id,
-                                                })
-                                              }
-                                              startContent={
-                                                <EditDocumentIcon
-                                                  className={iconClasses}
-                                                />
-                                              }
-                                            >
-                                              Edit
-                                            </DropdownItem>
-                                          </DropdownSection>
+                                    // Always show action button for authorized users (header presence is controlled upstream)
+                                    <Dropdown backdrop="blur" showArrow>
+                                      <DropdownTrigger>
+                                        <button className="p-1 rounded-full opacity-100 group-hover:opacity-100 transition-opacity hover:bg-muted">
+                                          <Ellipsis className="w-5 h-5 text-muted-foreground" />
+                                        </button>
+                                      </DropdownTrigger>
+                                      <DropdownMenu
+                                        aria-label="Actions"
+                                        variant="faded"
+                                        className="w-56"
+                                      >
+                                        <DropdownSection title="Actions">
+                                          <DropdownItem
+                                            key="edit"
+                                            description="Edit staff details"
+                                            onPress={() =>
+                                              navigate({
+                                                to: "/staff/edit/" + row?.id,
+                                              })
+                                            }
+                                            startContent={
+                                              <EditDocumentIcon className={iconClasses} />
+                                            }
+                                          >
+                                            Edit
+                                          </DropdownItem>
+                                        </DropdownSection>
+                                        {/* Only show delete for non-admin rows */}
+                                        {!(String(row?.four || "").toLowerCase() === "admin") && (
                                           <DropdownSection title="Danger zone">
                                             <DropdownItem
                                               key="delete"
@@ -382,19 +397,16 @@ export default function Dashboard({
                                               }}
                                               startContent={
                                                 <DeleteDocumentIcon
-                                                  className={cn(
-                                                    iconClasses,
-                                                    "text-danger"
-                                                  )}
+                                                  className={cn(iconClasses, "text-danger")}
                                                 />
                                               }
                                             >
                                               Delete
                                             </DropdownItem>
                                           </DropdownSection>
-                                        </DropdownMenu>
-                                      </Dropdown>
-                                    ) : null
+                                        )}
+                                      </DropdownMenu>
+                                    </Dropdown>
                                   ) : header.key === "two" ? (
                                     row.two
                                   ) : header.key === "three" ? (

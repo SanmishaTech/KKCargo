@@ -2,18 +2,8 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { useGetData } from "@/Components/HTTP/GET";
 import Dashboard from "./Dashboardreuse";
 import userAvatar from "@/images/Profile.jpg";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "@tanstack/react-router";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
 
 interface Breadcrumb {
   label: string;
@@ -33,6 +23,15 @@ interface TableColumns {
   pagination: any;
 }
 
+// Server item shape (subset of StaffResource)
+interface StaffItem {
+  id: number | string;
+  name?: string;
+  staff_name?: string;
+  email?: string;
+  role?: string;
+}
+
 interface DashboardConfig {
   breadcrumbs: Breadcrumb[];
   searchPlaceholder: string;
@@ -42,9 +41,9 @@ interface DashboardConfig {
 
 export default function Dashboardholiday() {
   const user = localStorage.getItem("user");
-  const User = JSON.parse(user);
+  const User = JSON.parse(user || "{}");
   const [config, setConfig] = useState<DashboardConfig | null>(null);
-  const [data, setData] = useState([]);
+  const [data, setData] = useState<StaffItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
@@ -72,10 +71,17 @@ export default function Dashboardholiday() {
   const onSuccess = useCallback((response: any) => {
     if (!response?.data) return;
 
+    // Normalize Staff payload: can be an array or an object with a `data` array (Laravel resource pagination)
+    const staffPayload = response?.data?.Staff;
+    const normalized = Array.isArray(staffPayload)
+      ? staffPayload
+      : Array.isArray(staffPayload?.data)
+      ? staffPayload.data
+      : [];
+
     // Avoid updating state if data hasn't changed to prevent extra re-renders
     setData((prev) => {
-      const newData = response.data.Staff || [];
-      return JSON.stringify(prev) !== JSON.stringify(newData) ? newData : prev;
+      return JSON.stringify(prev) !== JSON.stringify(normalized) ? normalized : prev;
     });
 
     const pagination = response.data.Pagination || {};
@@ -104,18 +110,13 @@ export default function Dashboardholiday() {
 
   // Memoized params object to prevent recreation on every render
   const queryParams = useMemo(() => ({
-    queryKey: ["staff", searchQuery, paginationState.currentPage],
+    queryKey: ["staff", String(searchQuery), String(paginationState.currentPage)],
     onSuccess,
     onError,
   }), [searchQuery, paginationState.currentPage, onSuccess, onError]);
 
   // Data fetching using shared GET hook
-  const {
-    data: apiResponse,
-    isLoading: queryLoading,
-    isError: queryError,
-    refetch,
-  } = useGetData({
+  const { isLoading: queryLoading, isError: queryError } = useGetData({
     endpoint: `/api/staff${searchQuery ? `?search=${searchQuery}&` : "?"}page=${paginationState.currentPage}`,
     params: queryParams,
   });
@@ -226,12 +227,12 @@ export default function Dashboardholiday() {
 
 
 
-  const handleFilterChange = (filterValue) => {
+  const handleFilterChange = (filterValue: any) => {
     console.log(`Filter changed: ${filterValue}`);
     // You can implement filtering logic here, possibly refetching data with filters applied
   };
 
-  const handleProductAction = (action, product) => {
+  const handleProductAction = (action: string, product: any) => {
     console.log(`Action: ${action} on registration:`, product);
     if (action === "edit") {
       // Navigate to edit page or open edit modal
@@ -276,53 +277,39 @@ export default function Dashboardholiday() {
   if (!config) return <div className="p-4">Loading configuration...</div>;
 
   // Map the API data to match the Dashboard component's expected tableData format
-  const mappedTableData = data?.map((item) => {
-    const services = item?.services || [];
-    const paidAmount = item?.paymentMode?.paidAmount || 0;
+  const mappedTableData = (Array.isArray(data) ? data : []).map((item: StaffItem) => {
+    const capital = (str: any) =>
+      typeof str === "string" ? str.charAt(0).toUpperCase() + str.slice(1) : str;
 
-    // Calculate the total service price based on each service's populated details.
-    const totalServicePrice = services.reduce((acc, service) => {
-      const servicePrice = service?.serviceId?.price || 0; // Replace 'price' with the actual field name for service price
-      return acc + servicePrice;
-    }, 0);
-
-    // Calculate balance amount based on total service price and paid amount.
-    const balanceAmount =
-      totalServicePrice - paidAmount > 0 ? totalServicePrice - paidAmount : 0;
-
-    const capital = (str) =>
-      typeof str === "string"
-        ? str.charAt(0).toUpperCase() + str.slice(1)
-        : str;
+    const name = item?.name ?? item?.staff_name ?? "NA";
+    const role = item?.role ?? "Unknown";
 
     return {
       id: item?.id,
-      one: capital(item?.name || "NA"),
-      two: capital(item?.email || "NA"),
-       four: capital(item?.role || "Unknown"),
-      delete:
-        item?.role?.toLowerCase() !== "admin" ? "/staff/" + item?.id : null,
+      one: capital(name),
+      two: item?.email ?? "NA",
+      four: capital(role),
+      delete: role?.toLowerCase?.() !== "admin" ? "/staff/" + item?.id : null,
     };
   });
 
   return (
     <div className="p-4">
       <Dashboard
-        breadcrumbs={config.breadcrumbs}
+        breadcrumbs={config.breadcrumbs as any}
         searchPlaceholder={config.searchPlaceholder}
         userAvatar={userAvatar}
         tableColumns={config.tableColumns}
-        tableData={mappedTableData}
+        tableData={mappedTableData as any}
         onAddProduct={handleAddProduct}
-
-        onFilterChange={handleFilterChange}
-        onProductAction={handleProductAction}
+        onFilterChange={handleFilterChange as unknown as () => void}
+        onProductAction={handleProductAction as unknown as () => void}
         onSearch={handleSearch}
         currentPage={paginationState.currentPage}
         totalPages={paginationState.totalPages}
         handleNextPage={handleNextPage}
         handlePrevPage={handlePrevPage}
-        setCurrentPage={(page) => handlePageChange(page)}
+        setCurrentPage={(page: number) => handlePageChange(page)}
         handlePageChange={handlePageChange}
         typeofschema={typeofschema}
         fetchData={fetchData}
