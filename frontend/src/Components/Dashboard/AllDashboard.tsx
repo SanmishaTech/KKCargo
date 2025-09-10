@@ -139,9 +139,8 @@ export default function ResponsiveLabDashboard() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Company Name</TableHead>
-                    <TableHead>Follow-up Date</TableHead>
                     <TableHead>Next Follow-up Date</TableHead>
-                    <TableHead>Follow-up Type</TableHead>
+                    <TableHead>Remark</TableHead>
                     <TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -150,10 +149,8 @@ export default function ResponsiveLabDashboard() {
                     followUps.map((followUp) => (
                       <TableRow key={followUp.id}>
                         <TableCell className="font-medium">{followUp.company_name}</TableCell>
-                       
-                        <TableCell>{new Date(followUp.follow_up_date).toLocaleDateString()}</TableCell>
                         <TableCell>{new Date(followUp.next_follow_up_date).toLocaleDateString()}</TableCell>
-                        <TableCell>{followUp.follow_up_type}</TableCell>
+                        <TableCell>{followUp.remarks}</TableCell>
                         <TableCell>
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                             {followUp.status}
@@ -163,7 +160,7 @@ export default function ResponsiveLabDashboard() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={6} className="h-24 text-center">
+                      <TableCell colSpan={4} className="h-24 text-center">
                         No follow-ups found.
                       </TableCell>
                     </TableRow>

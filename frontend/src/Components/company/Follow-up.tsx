@@ -37,10 +37,10 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
 const followUpFormSchema = z.object({
-  follow_up_date: z.string().nonempty("Follow Up Date is Required"),
-  next_follow_up_date: z.string().nonempty("Next Follow Up Date is Required"),
-  follow_up_type: z.string().nonempty("Follow Up Type is Required"),
-  remarks: z.string().optional(),
+  follow_up_date: z.string().optional(),
+  next_follow_up_date: z.string().optional(),
+  follow_up_type: z.string().optional(),
+  remarks: z.string().nonempty("Remark is Required"),
 });
 
 type FollowUpFormValues = z.infer<typeof followUpFormSchema>;
@@ -61,7 +61,7 @@ const defaultValues: Partial<FollowUpFormValues> = {
   remarks: "",
 };
 
-export function FollowUpForm({ companyId, onSuccess, onCancel }: { companyId?: number; onSuccess?: () => void; onCancel?: () => void }) {
+export function FollowUpForm({ companyId, onSuccess, onCancel, showOnlyRemark = false }: { companyId?: number; onSuccess?: () => void; onCancel?: () => void; showOnlyRemark?: boolean }) {
   const form = useForm<FollowUpFormValues>({
     resolver: zodResolver(followUpFormSchema),
     defaultValues,
@@ -110,55 +110,57 @@ export function FollowUpForm({ companyId, onSuccess, onCancel }: { companyId?: n
             <CardTitle>Follow Up Form</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 gap-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {!showOnlyRemark && (
+              <div className="grid grid-cols-1 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="follow_up_date"
+                    render={({ field }: { field: ControllerRenderProps<FollowUpFormValues, "follow_up_date"> }) => (
+                      <FormItem>
+                        <FormLabel>Follow Up Date</FormLabel>
+                        <Input type="date" {...field} />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="next_follow_up_date"
+                    render={({ field }: { field: ControllerRenderProps<FollowUpFormValues, "next_follow_up_date"> }) => (
+                      <FormItem>
+                        <FormLabel>Next Follow Up Date</FormLabel>
+                        <Input type="date" {...field} />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
                 <FormField
                   control={form.control}
-                  name="follow_up_date"
-                  render={({ field }: { field: ControllerRenderProps<FollowUpFormValues, "follow_up_date"> }) => (
+                  name="follow_up_type"
+                  render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Follow Up Date</FormLabel>
-                      <Input type="date" {...field} />
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="next_follow_up_date"
-                  render={({ field }: { field: ControllerRenderProps<FollowUpFormValues, "next_follow_up_date"> }) => (
-                    <FormItem>
-                      <FormLabel>Next Follow Up Date</FormLabel>
-                      <Input type="date" {...field} />
+                      <FormLabel>Follow Up Type</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a Follow Up Type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Call">Call</SelectItem>
+                          <SelectItem value="Email">Email</SelectItem>
+                          <SelectItem value="Meeting">Meeting</SelectItem>
+                          <SelectItem value="Other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
               </div>
-              <FormField
-                control={form.control}
-                name="follow_up_type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Follow Up Type</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a Follow Up Type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Call">Call</SelectItem>
-                        <SelectItem value="Email">Email</SelectItem>
-                        <SelectItem value="Meeting">Meeting</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            )}
             <div className="mt-6">
               <FormField
                 control={form.control}

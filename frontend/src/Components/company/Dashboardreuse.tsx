@@ -823,6 +823,7 @@ export default function Dashboard({
                           companyId={remarkRow?.id}
                           onSuccess={() => handleRemarkClick(remarkRow)}
                           onCancel={() => setRemarkDialogOpen(false)}
+                          showOnlyRemark={true}
                         />
                       </div>
                     </>

@@ -61,6 +61,7 @@ class DashboardController extends Controller
                                 'follow_up_date' => $followUp->follow_up_date,
                                 'next_follow_up_date' => $followUp->next_follow_up_date,
                                 'follow_up_type' => $followUp->follow_up_type,
+                                'remarks' => $followUp->remarks,
                                 'status' => $followUp->company ? $followUp->company->status : 'N/A',
                             ];
                         });
