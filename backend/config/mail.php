@@ -14,7 +14,7 @@ return [
     |
     */
 
-    'default' => env('MAIL_MAILER', 'log'),
+    'default' => env('MAIL_MAILER') ?: 'log',
 
     /*
     |--------------------------------------------------------------------------
@@ -44,7 +44,8 @@ return [
             'port' => env('MAIL_PORT', 2525),
             'encryption' => env('MAIL_ENCRYPTION', 'tls'),
             'username' => env('MAIL_USERNAME'),
-            'password' => env('MAIL_PASSWORD'),
+            // Allow falling back to MAIL_API for providers like Brevo (Sendinblue)
+            'password' => env('MAIL_PASSWORD') ?: env('MAIL_API'),
             'timeout' => null,
             'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url(env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
         ],
@@ -109,8 +110,9 @@ return [
     */
 
     'from' => [
-        'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
-        'name' => env('MAIL_FROM_NAME', 'Example'),
+        // Coalesce empty string to sensible defaults to avoid RFC 2822 errors
+        'address' => env('MAIL_FROM_ADDRESS') ?: 'hello@example.com',
+        'name' => env('MAIL_FROM_NAME') ?: env('APP_NAME', 'Example'),
     ],
 
 ];

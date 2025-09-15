@@ -59,8 +59,15 @@ class ActivityLogController extends BaseController
             'latest' => $logs->take(20),
         ];
 
-        // Get recipients from environment variable
-        $recipients = explode(',', env('ACTIVITY_LOG_RECIPIENTS'));
+        // Get recipients from config (works with config caching) and sanitize
+        $recipients = array_values(array_filter(
+            array_map('trim', explode(',', (string) config('activity.log_recipients', ''))),
+            fn ($email) => filter_var($email, FILTER_VALIDATE_EMAIL)
+        ));
+
+        if (empty($recipients)) {
+            return $this->sendError('Configuration Error', ['error' => 'No valid ACTIVITY_LOG_RECIPIENTS configured in .env'], 422);
+        }
 
         try {
             // Generate PDF

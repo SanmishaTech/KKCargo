@@ -47,8 +47,16 @@ class SendActivityReport extends Command
             'latest' => $logs->take(20),
         ];
 
-        // Get recipients from environment variable
-        $recipients = explode(',', env('ACTIVITY_LOG_RECIPIENTS'));
+        // Get recipients from config (works with config caching) and sanitize
+        $recipients = array_values(array_filter(
+            array_map('trim', explode(',', (string) config('activity.log_recipients', ''))),
+            fn ($email) => filter_var($email, FILTER_VALIDATE_EMAIL)
+        ));
+
+        if (empty($recipients)) {
+            $this->error('No valid ACTIVITY_LOG_RECIPIENTS configured in .env');
+            return Command::FAILURE;
+        }
 
         // Generate PDF
         $pdf = Pdf::loadView('pdf.activity_report', ['summary' => $summary]);
