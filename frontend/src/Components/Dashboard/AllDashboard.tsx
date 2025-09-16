@@ -4,6 +4,14 @@ import { useGetData } from "../HTTP/GET";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import axios from "axios";
+import {
   Card,
   CardContent,
   CardHeader,
@@ -28,14 +36,16 @@ export default function ResponsiveLabDashboard() {
   const [nextUpcomingFollowUp, setNextUpcomingFollowUp] = useState<string | null>(null);
   const [followUps, setFollowUps] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [companyTypeFilter, setCompanyTypeFilter] = useState("");
+  const [companyTypes, setCompanyTypes] = useState<{ value: string; label: string }[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [nextPageUrl, setNextPageUrl] = useState<string | null>(null);
   const [prevPageUrl, setPrevPageUrl] = useState<string | null>(null);
 
   useGetData({
-    endpoint: `/api/dashboard?page=${currentPage}&company_name=${searchQuery}`,
+    endpoint: `/api/dashboard?page=${currentPage}&company_name=${searchQuery}&company_type=${companyTypeFilter}`,
     params: {
-      queryKey: ["dashboard", searchQuery, currentPage.toString()],
+      queryKey: ["dashboard", searchQuery, companyTypeFilter, currentPage.toString()],
       onSuccess: (data: any) => {
         if (!data?.status) {
           return;
@@ -58,6 +68,31 @@ export default function ResponsiveLabDashboard() {
       },
     },
   });
+
+  // Fetch company types for filter dropdown
+  useEffect(() => {
+    const fetchCompanyTypes = async () => {
+      try {
+        const res = await axios.get("/api/company-types", {
+          headers: {
+            Authorization: "Bearer " + localStorage.getItem("token"),
+          },
+        });
+        const types: string[] = Array.isArray(res.data?.data) ? res.data.data : [];
+        const opts = types.map((t) => ({ value: t, label: t }));
+        setCompanyTypes(opts);
+      } catch (e) {
+        // fallback defaults
+        setCompanyTypes([
+          { value: "Merchant Exporter", label: "Merchant Exporter" },
+          { value: "Merchant cum Manufacturer Exporter", label: "Merchant cum Manufacturer Exporter" },
+          { value: "Manufacturer Exporter", label: "Manufacturer Exporter" },
+          { value: "Service Provider", label: "Service Provider" },
+        ]);
+      }
+    };
+    fetchCompanyTypes();
+  }, []);
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -124,15 +159,36 @@ export default function ResponsiveLabDashboard() {
           <Card className="bg-accent/40">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Follow-ups</CardTitle>
-              <Input
-                placeholder="Filter by company name..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="max-w-sm"
-              />
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Filter by company name..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="max-w-sm"
+                />
+                <Select
+                  value={companyTypeFilter || "all"}
+                  onValueChange={(value) => {
+                    setCompanyTypeFilter(value === "all" ? "" : value);
+                    setCurrentPage(1);
+                  }}
+                >
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Filter by company type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Company Types</SelectItem>
+                    {companyTypes.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </CardHeader>
             <CardContent>
               <Table>
@@ -142,6 +198,7 @@ export default function ResponsiveLabDashboard() {
                     <TableHead>Next Follow-up Date</TableHead>
                     <TableHead>Remark</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Created At</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -149,18 +206,41 @@ export default function ResponsiveLabDashboard() {
                     followUps.map((followUp) => (
                       <TableRow key={followUp.id}>
                         <TableCell className="font-medium">{followUp.company_name}</TableCell>
-                        <TableCell>{new Date(followUp.next_follow_up_date).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          {followUp.next_follow_up_date && !isNaN(new Date(followUp.next_follow_up_date).getTime())
+                            ? new Date(followUp.next_follow_up_date).toLocaleDateString()
+                            : '-'
+                          }
+                        </TableCell>
                         <TableCell>{followUp.remarks}</TableCell>
                         <TableCell>
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                             {followUp.status}
                           </span>
                         </TableCell>
+                        <TableCell>
+                          {followUp.created_at && !isNaN(new Date(followUp.created_at).getTime())
+                            ? (() => {
+                                const date = new Date(followUp.created_at);
+                                const day = date.getDate();
+                                const month = date.toLocaleDateString('en-US', { month: 'long' }).toUpperCase();
+                                const year = date.getFullYear();
+                                return (
+                                  <div className="text-center">
+                                    <div className="font-bold">{day}</div>
+                                    <div className="text-xs">{month}</div>
+                                    <div className="text-xs">{year}</div>
+                                  </div>
+                                );
+                              })()
+                            : 'N/A'
+                          }
+                        </TableCell>
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={4} className="h-24 text-center">
+                      <TableCell colSpan={5} className="h-24 text-center">
                         No follow-ups found.
                       </TableCell>
                     </TableRow>

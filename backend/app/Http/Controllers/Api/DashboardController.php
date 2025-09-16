@@ -45,6 +45,12 @@ class DashboardController extends Controller
                 });
             }
 
+            if ($request->has('company_type') && !empty($request->company_type)) {
+                $followUpsQuery->whereHas('company', function ($query) use ($request) {
+                    $query->where('type_of_company', $request->company_type);
+                });
+            }
+
             return response()->json([
                 'status' => true,
                 'data' => [
@@ -63,6 +69,7 @@ class DashboardController extends Controller
                                 'follow_up_type' => $followUp->follow_up_type,
                                 'remarks' => $followUp->remarks,
                                 'status' => $followUp->company ? $followUp->company->status : 'N/A',
+                                'created_at' => $followUp->created_at ? $followUp->created_at->format('Y-m-d H:i:s') : null,
                             ];
                         });
                     })
