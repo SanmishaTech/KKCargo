@@ -42,6 +42,7 @@ export default function ResponsiveLabDashboard() {
   const [nextPageUrl, setNextPageUrl] = useState<string | null>(null);
   const [prevPageUrl, setPrevPageUrl] = useState<string | null>(null);
 
+
   useGetData({
     endpoint: `/api/dashboard?page=${currentPage}&company_name=${searchQuery}&company_type=${companyTypeFilter}`,
     params: {

@@ -541,4 +541,34 @@ EOT;
         );
     }
 
+    /**
+     * Update company status.
+     */
+    public function updateStatus(Request $request, string $id): JsonResponse
+    {
+        try {
+            $company = Company::find($id);
+
+            if (!$company) {
+                return $this->sendError("Company not found", ['error' => 'Company not found']);
+            }
+
+            // Validate the status
+            $request->validate([
+                'status' => 'required|string|in:interested,not_interested,not_answering,wrong_number,busy_on_call'
+            ]);
+
+            $company->status = $request->input('status');
+            $company->save();
+
+            return $this->sendResponse(
+                ['status' => $request->input('status')],
+                "Company status updated successfully"
+            );
+
+        } catch (\Exception $e) {
+            return $this->sendError('Error updating company status', ['error' => $e->getMessage()], 500);
+        }
+    }
+
 }

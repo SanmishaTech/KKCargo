@@ -122,4 +122,37 @@ class FollowUpController extends BaseController
         );
     }
 
+    public function updateStatus(Request $request, string $id): JsonResponse
+    {
+        $followup = FollowUp::find($id);
+
+        if (!$followup) {
+            return $this->sendError("Followup not found", ['error' => 'Followup not found']);
+        }
+
+        // Validate the status
+        $request->validate([
+            'status' => 'required|string|in:waiting,interested,not_interested,follow_up'
+        ]);
+
+        // Update the status in the related company
+        if ($followup->company) {
+            $followup->company->status = $request->input('status');
+            $followup->company->save();
+
+            // Log status update
+            ActivityLogger::log('followup.status_updated', $followup, 'Follow-up status updated', [
+                'company_id' => $followup->company_id,
+                'new_status' => $request->input('status')
+            ]);
+
+            return $this->sendResponse(
+                ['status' => $request->input('status')],
+                "Status updated successfully"
+            );
+        }
+
+        return $this->sendError("Company not found for this followup", ['error' => 'Company not found']);
+    }
+
 }

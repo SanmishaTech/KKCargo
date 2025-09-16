@@ -27,6 +27,7 @@ export const Route = createRootRoute({
             <Toaster 
               position="top-right"
               closeButton
+              richColors
               toastOptions={{
                 style: {
                   marginTop: '1rem',

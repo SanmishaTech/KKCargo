@@ -32,6 +32,8 @@ Route::group(['middleware'=>['auth:sanctum', 'permission','request.null']], func
    Route::delete('/company-types', [CompanyController::class, 'deleteType'])->name('companies.types.delete');
    // Company cities dropdown
    Route::get('/company-cities', [CompanyController::class, 'cities'])->name('companies.cities');
+   // Company status update (must be before resource routes)
+   Route::put('/companies/{id}/status', [CompanyController::class, 'updateStatus'])->name('companies.update-status');
    // Bulk delete companies
    Route::post('/companies/bulk-delete', [CompanyController::class, 'bulkDelete'])->name('companies.bulk-delete');
     // Company resource routes
@@ -39,6 +41,7 @@ Route::group(['middleware'=>['auth:sanctum', 'permission','request.null']], func
    //followup
    Route::resource('followup', FollowUpController::class);
    Route::get('/all_followup', [FollowUpController::class, 'allFollowup'])->name("followups.all");
+   Route::put('/followup/{id}/status', [FollowUpController::class, 'updateStatus'])->name('followup.update-status');
    
 
    // Dashboard route

@@ -6,6 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "@tanstack/react-router";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import axios from "axios";
+import { toast } from "sonner";
+import {
   Pagination,
   PaginationContent,
   PaginationEllipsis,
@@ -57,6 +66,13 @@ export default function Dashboardholiday() {
   });
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState<{dateFilter?: string, companyType?: string, city?: string}>({});
+  const [statusOptions] = useState([
+    { value: "interested", label: "Interested" },
+    { value: "not_interested", label: "Not interested" },
+    { value: "not_answering", label: "Not answering the call" },
+    { value: "wrong_number", label: "Wrong number" },
+    { value: "busy_on_call", label: "Busy on another call" },
+  ]);
 
   // Memoized callback functions to prevent infinite re-renders
   const onSuccess = useCallback((response: any) => {
@@ -159,6 +175,37 @@ export default function Dashboardholiday() {
   const handleCityFilter = (city: string) => {
     setFilter((prev) => ({ ...prev, city: city }));
     setPaginationState((prev) => ({ ...prev, currentPage: 1 }));
+  };
+
+  // Handle status update for companies
+  const handleStatusUpdate = async (companyId: string, newStatus: string) => {
+    try {
+      const response = await axios.put(`/api/companies/${companyId}/status`, 
+        { status: newStatus },
+        {
+          headers: {
+            Authorization: "Bearer " + localStorage.getItem("token"),
+          },
+        }
+      );
+
+      if (response.data.status) {
+        // Update the local state
+        setData(prev => 
+          prev.map(company => 
+            company.id === companyId 
+              ? { ...company, status: newStatus }
+              : company
+          )
+        );
+        toast.success("Status updated successfully");
+      } else {
+        toast.error("Failed to update status");
+      }
+    } catch (error: any) {
+      console.error("Error updating status:", error);
+      toast.error(error.response?.data?.message || "Failed to update status");
+    }
   };
 
   const handleNextPage = () => {
@@ -344,16 +391,21 @@ export default function Dashboardholiday() {
         "NA"
       ),
       nine: (
-        <span
-          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-            item?.status === "interested"
-              ? "bg-green-100 text-green-800"
-              : item?.status === "waiting"
-              ? "bg-yellow-100 text-yellow-800"
-              : "bg-gray-100 text-gray-800"
-          }`}>
-          {capital(item?.status)}
-        </span>
+        <Select
+          value={item?.status || "interested"}
+          onValueChange={(value) => handleStatusUpdate(item?.id, value)}
+        >
+          <SelectTrigger className="w-[180px] h-8">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {statusOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       ),
       delete:
         item?.role?.toLowerCase() !== "admin" ? "/companies/" + item?.id : null,
