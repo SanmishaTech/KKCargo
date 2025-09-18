@@ -8,6 +8,8 @@ use App\Http\Controllers\Api\CompanyController;
 use App\Http\Controllers\Api\FollowUpController;
 use App\Http\Controllers\Api\DashboardController; 
 use App\Http\Controllers\Api\ActivityLogController;
+use App\Http\Controllers\Api\RolesController;
+use App\Http\Controllers\Api\PermissionsController;
 
 
  
@@ -50,6 +52,14 @@ Route::group(['middleware'=>['auth:sanctum', 'permission','request.null']], func
    // Activity Logs (admin-only enforced in controller)
    Route::get('/activity-logs', [ActivityLogController::class, 'index'])->withoutMiddleware('permission')->name('activity-logs.index');
    Route::post('/activity-logs/send-report', [ActivityLogController::class, 'sendReport'])->withoutMiddleware('permission')->name('activity-logs.send-report');
+
+   // Roles and Permissions Management (admin-only enforced in controller)
+   Route::get('/roles', [RolesController::class, 'index'])->withoutMiddleware('permission')->name("roles.index");
+   Route::get('/roles/{id}', [RolesController::class, 'show'])->withoutMiddleware('permission')->name("roles.show");
+   Route::put('/roles/{id}', [RolesController::class, 'update'])->withoutMiddleware('permission')->name("roles.update");
+  
+   Route::get('/permissions', [PermissionsController::class, 'index'])->withoutMiddleware('permission')->name("permissions.index");
+   Route::get('/generate_permissions', [PermissionsController::class, 'generatePermissions'])->withoutMiddleware('permission')->name("permissions.generate");
 
 
 

@@ -13,11 +13,14 @@
 import { Route as rootRoute } from './routes/__root'
 import { Route as IndexImport } from './routes/index'
 import { Route as StaffIndexImport } from './routes/staff/index'
+import { Route as RolesIndexImport } from './routes/roles/index'
+import { Route as PermissionsIndexImport } from './routes/permissions/index'
 import { Route as LoginIndexImport } from './routes/login/index'
 import { Route as FollowUpIndexImport } from './routes/follow-up/index'
 import { Route as DashboardsIndexImport } from './routes/dashboards/index'
 import { Route as CompanyIndexImport } from './routes/company/index'
 import { Route as ActivityLogIndexImport } from './routes/activity-log/index'
+import { Route as RolesIdImport } from './routes/roles/$id'
 import { Route as StaffAddIndexImport } from './routes/staff/add/index'
 import { Route as CompanyAddIndexImport } from './routes/company/add/index'
 import { Route as StaffEditIdImport } from './routes/staff/edit/$id'
@@ -34,6 +37,18 @@ const IndexRoute = IndexImport.update({
 const StaffIndexRoute = StaffIndexImport.update({
   id: '/staff/',
   path: '/staff/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const RolesIndexRoute = RolesIndexImport.update({
+  id: '/roles/',
+  path: '/roles/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const PermissionsIndexRoute = PermissionsIndexImport.update({
+  id: '/permissions/',
+  path: '/permissions/',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -64,6 +79,12 @@ const CompanyIndexRoute = CompanyIndexImport.update({
 const ActivityLogIndexRoute = ActivityLogIndexImport.update({
   id: '/activity-log/',
   path: '/activity-log/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const RolesIdRoute = RolesIdImport.update({
+  id: '/roles/$id',
+  path: '/roles/$id',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -102,6 +123,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexImport
       parentRoute: typeof rootRoute
     }
+    '/roles/$id': {
+      id: '/roles/$id'
+      path: '/roles/$id'
+      fullPath: '/roles/$id'
+      preLoaderRoute: typeof RolesIdImport
+      parentRoute: typeof rootRoute
+    }
     '/activity-log/': {
       id: '/activity-log/'
       path: '/activity-log'
@@ -135,6 +163,20 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/permissions/': {
+      id: '/permissions/'
+      path: '/permissions'
+      fullPath: '/permissions'
+      preLoaderRoute: typeof PermissionsIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/roles/': {
+      id: '/roles/'
+      path: '/roles'
+      fullPath: '/roles'
+      preLoaderRoute: typeof RolesIndexImport
       parentRoute: typeof rootRoute
     }
     '/staff/': {
@@ -179,11 +221,14 @@ declare module '@tanstack/react-router' {
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/roles/$id': typeof RolesIdRoute
   '/activity-log': typeof ActivityLogIndexRoute
   '/company': typeof CompanyIndexRoute
   '/dashboards': typeof DashboardsIndexRoute
   '/follow-up': typeof FollowUpIndexRoute
   '/login': typeof LoginIndexRoute
+  '/permissions': typeof PermissionsIndexRoute
+  '/roles': typeof RolesIndexRoute
   '/staff': typeof StaffIndexRoute
   '/company/edit/$id': typeof CompanyEditIdRoute
   '/staff/edit/$id': typeof StaffEditIdRoute
@@ -193,11 +238,14 @@ export interface FileRoutesByFullPath {
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/roles/$id': typeof RolesIdRoute
   '/activity-log': typeof ActivityLogIndexRoute
   '/company': typeof CompanyIndexRoute
   '/dashboards': typeof DashboardsIndexRoute
   '/follow-up': typeof FollowUpIndexRoute
   '/login': typeof LoginIndexRoute
+  '/permissions': typeof PermissionsIndexRoute
+  '/roles': typeof RolesIndexRoute
   '/staff': typeof StaffIndexRoute
   '/company/edit/$id': typeof CompanyEditIdRoute
   '/staff/edit/$id': typeof StaffEditIdRoute
@@ -208,11 +256,14 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
+  '/roles/$id': typeof RolesIdRoute
   '/activity-log/': typeof ActivityLogIndexRoute
   '/company/': typeof CompanyIndexRoute
   '/dashboards/': typeof DashboardsIndexRoute
   '/follow-up/': typeof FollowUpIndexRoute
   '/login/': typeof LoginIndexRoute
+  '/permissions/': typeof PermissionsIndexRoute
+  '/roles/': typeof RolesIndexRoute
   '/staff/': typeof StaffIndexRoute
   '/company/edit/$id': typeof CompanyEditIdRoute
   '/staff/edit/$id': typeof StaffEditIdRoute
@@ -224,11 +275,14 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/roles/$id'
     | '/activity-log'
     | '/company'
     | '/dashboards'
     | '/follow-up'
     | '/login'
+    | '/permissions'
+    | '/roles'
     | '/staff'
     | '/company/edit/$id'
     | '/staff/edit/$id'
@@ -237,11 +291,14 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/roles/$id'
     | '/activity-log'
     | '/company'
     | '/dashboards'
     | '/follow-up'
     | '/login'
+    | '/permissions'
+    | '/roles'
     | '/staff'
     | '/company/edit/$id'
     | '/staff/edit/$id'
@@ -250,11 +307,14 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/roles/$id'
     | '/activity-log/'
     | '/company/'
     | '/dashboards/'
     | '/follow-up/'
     | '/login/'
+    | '/permissions/'
+    | '/roles/'
     | '/staff/'
     | '/company/edit/$id'
     | '/staff/edit/$id'
@@ -265,11 +325,14 @@ export interface FileRouteTypes {
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  RolesIdRoute: typeof RolesIdRoute
   ActivityLogIndexRoute: typeof ActivityLogIndexRoute
   CompanyIndexRoute: typeof CompanyIndexRoute
   DashboardsIndexRoute: typeof DashboardsIndexRoute
   FollowUpIndexRoute: typeof FollowUpIndexRoute
   LoginIndexRoute: typeof LoginIndexRoute
+  PermissionsIndexRoute: typeof PermissionsIndexRoute
+  RolesIndexRoute: typeof RolesIndexRoute
   StaffIndexRoute: typeof StaffIndexRoute
   CompanyEditIdRoute: typeof CompanyEditIdRoute
   StaffEditIdRoute: typeof StaffEditIdRoute
@@ -279,11 +342,14 @@ export interface RootRouteChildren {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  RolesIdRoute: RolesIdRoute,
   ActivityLogIndexRoute: ActivityLogIndexRoute,
   CompanyIndexRoute: CompanyIndexRoute,
   DashboardsIndexRoute: DashboardsIndexRoute,
   FollowUpIndexRoute: FollowUpIndexRoute,
   LoginIndexRoute: LoginIndexRoute,
+  PermissionsIndexRoute: PermissionsIndexRoute,
+  RolesIndexRoute: RolesIndexRoute,
   StaffIndexRoute: StaffIndexRoute,
   CompanyEditIdRoute: CompanyEditIdRoute,
   StaffEditIdRoute: StaffEditIdRoute,
@@ -302,11 +368,14 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/",
+        "/roles/$id",
         "/activity-log/",
         "/company/",
         "/dashboards/",
         "/follow-up/",
         "/login/",
+        "/permissions/",
+        "/roles/",
         "/staff/",
         "/company/edit/$id",
         "/staff/edit/$id",
@@ -316,6 +385,9 @@ export const routeTree = rootRoute
     },
     "/": {
       "filePath": "index.tsx"
+    },
+    "/roles/$id": {
+      "filePath": "roles/$id.tsx"
     },
     "/activity-log/": {
       "filePath": "activity-log/index.tsx"
@@ -331,6 +403,12 @@ export const routeTree = rootRoute
     },
     "/login/": {
       "filePath": "login/index.tsx"
+    },
+    "/permissions/": {
+      "filePath": "permissions/index.tsx"
+    },
+    "/roles/": {
+      "filePath": "roles/index.tsx"
     },
     "/staff/": {
       "filePath": "staff/index.tsx"

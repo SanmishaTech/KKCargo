@@ -18,7 +18,9 @@ import {
   GraduationCap,
   Grid,
   LogOut,
-  Truck
+  Truck,
+  Shield,
+  Key
 } from "lucide-react";
 
 // Define the MenuItem interface (similar to sidebar)
@@ -48,6 +50,22 @@ export const searchconfig: Record<string, MenuItem[]> = {
       title: "Company",
       url: "/company",
       icon: Building,
+    },
+    {
+      title: "Roles & Permissions",
+      icon: Shield,
+      children: [
+        {
+          title: "Roles",
+          url: "/roles",
+          icon: Users,
+        },
+        {
+          title: "Permissions",
+          url: "/permissions",
+          icon: Key,
+        },
+      ],
     },
     {
       title: "Activity Log",
