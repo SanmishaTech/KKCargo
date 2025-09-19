@@ -3,76 +3,76 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Carbon;
-use App\Models\ActivityLog;
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Http\Controllers\Api\ActivityLogController;
+use Illuminate\Http\Request;
+use App\Models\User;
 
 class SendActivityReport extends Command
 {
     protected $signature = 'activity:email-report {--date=}';
-    protected $description = 'Send the daily activity log report via email';
+    protected $description = 'Send daily activity log report via email';
 
     public function handle(): int
     {
-        $dateOption = $this->option('date');
-        try {
-            if ($dateOption) {
-                $reportDate = Carbon::parse($dateOption)->startOfDay();
-            } else {
-                // Default to yesterday's date to send a complete day summary
-                $reportDate = Carbon::yesterday()->startOfDay();
-            }
-        } catch (\Exception $e) {
-            $this->error('Invalid date format. Use YYYY-MM-DD.');
+        $reportDate = $this->getReportDate();
+        if (!$reportDate) {
             return Command::INVALID;
         }
 
-        $start = $reportDate->copy()->startOfDay();
-        $end   = $reportDate->copy()->endOfDay();
-
-        $logs = ActivityLog::with('user')
-            ->whereBetween('created_at', [$start, $end])
-            ->orderBy('created_at', 'asc')
-            ->get();
-
-        $summary = [
-            'date' => $reportDate->toDateString(),
-            'total' => $logs->count(),
-            'by_action' => $logs->groupBy('action')->map->count()->sortDesc(),
-            'by_user' => $logs->groupBy('user_id')->map(function ($items, $userId) {
-                $name = optional(optional($items->first())->user)->name ?: 'System';
-                return ['name' => $name, 'count' => $items->count()];
-            })->sortByDesc('count'),
-            'latest' => $logs->take(20),
-        ];
-
-        // Get recipients from config (works with config caching) and sanitize
-        $recipients = array_values(array_filter(
-            array_map('trim', explode(',', (string) config('activity.log_recipients', ''))),
-            fn ($email) => filter_var($email, FILTER_VALIDATE_EMAIL)
-        ));
-
-        if (empty($recipients)) {
-            $this->error('No valid ACTIVITY_LOG_RECIPIENTS configured in .env');
+        $adminUser = $this->getAdminUser();
+        if (!$adminUser) {
             return Command::FAILURE;
         }
 
-        // Generate PDF
-        $pdf = Pdf::loadView('pdf.activity_report', ['summary' => $summary]);
-        $pdfContent = $pdf->output();
-        $fileName = 'daily-activity-report-' . $summary['date'] . '.pdf';
+        return $this->sendReport($reportDate, $adminUser);
+    }
 
-        Mail::send('emails.activity_report_simple', ['summary' => $summary], function ($message) use ($recipients, $summary, $pdfContent, $fileName) {
-            $message->to($recipients)
-                ->subject('Daily Activity Report - ' . $summary['date'])
-                ->attachData($pdfContent, $fileName, [
-                    'mime' => 'application/pdf',
-                ]);
-        });
+    private function getReportDate(): ?string
+    {
+        $dateOption = $this->option('date');
+        
+        try {
+            return $dateOption 
+                ? Carbon::parse($dateOption)->format('Y-m-d')
+                : Carbon::yesterday()->format('Y-m-d');
+        } catch (\Exception $e) {
+            $this->error('Invalid date format. Use YYYY-MM-DD.');
+            return null;
+        }
+    }
 
-        $this->info('Daily activity report sent for ' . $summary['date']);
-        return Command::SUCCESS;
+    private function getAdminUser(): ?User
+    {
+        $adminUser = User::whereHas('roles', fn($query) => $query->where('name', 'admin'))->first();
+        
+        if (!$adminUser) {
+            $this->error('No admin user found. Cannot send report.');
+        }
+        
+        return $adminUser;
+    }
+
+    private function sendReport(string $reportDate, User $adminUser): int
+    {
+        $request = new Request(['date' => $reportDate]);
+        $request->setUserResolver(fn() => $adminUser);
+
+        try {
+            $response = (new ActivityLogController())->sendReport($request);
+            $responseData = $response->getData(true);
+            
+            if ($response->getStatusCode() === 200 && $responseData['status']) {
+                $this->info("Daily activity report sent successfully for {$reportDate}");
+                return Command::SUCCESS;
+            }
+            
+            $this->error('Failed to send report: ' . ($responseData['message'] ?? 'Unknown error'));
+            return Command::FAILURE;
+        } catch (\Exception $e) {
+            $this->error('Error sending report: ' . $e->getMessage());
+            return Command::FAILURE;
+        }
     }
 }
 
