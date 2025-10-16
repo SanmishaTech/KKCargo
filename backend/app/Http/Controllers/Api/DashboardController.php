@@ -51,6 +51,12 @@ class DashboardController extends Controller
                 });
             }
 
+            if ($request->has('status') && !empty($request->status)) {
+                $followUpsQuery->whereHas('company', function ($query) use ($request) {
+                    $query->where('status', $request->status);
+                });
+            }
+
             return response()->json([
                 'status' => true,
                 'data' => [

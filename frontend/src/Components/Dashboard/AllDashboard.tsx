@@ -37,6 +37,7 @@ export default function ResponsiveLabDashboard() {
   const [followUps, setFollowUps] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [companyTypeFilter, setCompanyTypeFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [companyTypes, setCompanyTypes] = useState<{ value: string; label: string }[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [nextPageUrl, setNextPageUrl] = useState<string | null>(null);
@@ -44,9 +45,9 @@ export default function ResponsiveLabDashboard() {
 
 
   useGetData({
-    endpoint: `/api/dashboard?page=${currentPage}&company_name=${searchQuery}&company_type=${companyTypeFilter}`,
+    endpoint: `/api/dashboard?page=${currentPage}&company_name=${searchQuery}&company_type=${companyTypeFilter}&status=${statusFilter}`,
     params: {
-      queryKey: ["dashboard", searchQuery, companyTypeFilter, currentPage.toString()],
+      queryKey: ["dashboard", searchQuery, companyTypeFilter, statusFilter, currentPage.toString()],
       onSuccess: (data: any) => {
         if (!data?.status) {
           return;
@@ -178,7 +179,7 @@ export default function ResponsiveLabDashboard() {
                   }}
                 >
                   <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Filter by company type" />
+                    <SelectValue placeholder="All Company.." />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Company Types</SelectItem>
@@ -187,6 +188,25 @@ export default function ResponsiveLabDashboard() {
                         {type.label}
                       </SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={statusFilter || "all"}
+                  onValueChange={(value) => {
+                    setStatusFilter(value === "all" ? "" : value);
+                    setCurrentPage(1);
+                  }}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="All Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="interested">Interested</SelectItem>
+                    <SelectItem value="not_interested">Not Interested</SelectItem>
+                    <SelectItem value="not_answering">Not Answering the Call</SelectItem>
+                    <SelectItem value="wrong_number">Wrong Number</SelectItem>
+                    <SelectItem value="busy_on_call">Busy on Another Call</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
