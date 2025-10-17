@@ -22,6 +22,9 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'google2fa_secret',
+        'google2fa_enabled',
+        'google2fa_enabled_at',
     ];
 
     /**
@@ -32,6 +35,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'google2fa_secret',
     ];
 
     /**
@@ -44,6 +48,8 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'google2fa_enabled' => 'boolean',
+            'google2fa_enabled_at' => 'datetime',
         ];
     }
 
@@ -57,6 +63,33 @@ class User extends Authenticatable
         return $this->hasMany(Notification::class, 'to_id');
     }
 
+    /**
+     * Check if user has 2FA enabled
+     */
+    public function hasTwoFactorEnabled(): bool
+    {
+        return $this->google2fa_enabled && !empty($this->google2fa_secret);
+    }
 
+    /**
+     * Enable 2FA for the user
+     */
+    public function enableTwoFactor(string $secret): void
+    {
+        $this->google2fa_secret = $secret;
+        $this->google2fa_enabled = true;
+        $this->google2fa_enabled_at = now();
+        $this->save();
+    }
 
+    /**
+     * Disable 2FA for the user
+     */
+    public function disableTwoFactor(): void
+    {
+        $this->google2fa_secret = null;
+        $this->google2fa_enabled = false;
+        $this->google2fa_enabled_at = null;
+        $this->save();
+    }
 }

@@ -13,6 +13,7 @@
 import { Route as rootRoute } from './routes/__root'
 import { Route as IndexImport } from './routes/index'
 import { Route as StaffIndexImport } from './routes/staff/index'
+import { Route as SettingsIndexImport } from './routes/settings/index'
 import { Route as RolesIndexImport } from './routes/roles/index'
 import { Route as PermissionsIndexImport } from './routes/permissions/index'
 import { Route as LoginIndexImport } from './routes/login/index'
@@ -37,6 +38,12 @@ const IndexRoute = IndexImport.update({
 const StaffIndexRoute = StaffIndexImport.update({
   id: '/staff/',
   path: '/staff/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const SettingsIndexRoute = SettingsIndexImport.update({
+  id: '/settings/',
+  path: '/settings/',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -179,6 +186,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RolesIndexImport
       parentRoute: typeof rootRoute
     }
+    '/settings/': {
+      id: '/settings/'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsIndexImport
+      parentRoute: typeof rootRoute
+    }
     '/staff/': {
       id: '/staff/'
       path: '/staff'
@@ -229,6 +243,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginIndexRoute
   '/permissions': typeof PermissionsIndexRoute
   '/roles': typeof RolesIndexRoute
+  '/settings': typeof SettingsIndexRoute
   '/staff': typeof StaffIndexRoute
   '/company/edit/$id': typeof CompanyEditIdRoute
   '/staff/edit/$id': typeof StaffEditIdRoute
@@ -246,6 +261,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginIndexRoute
   '/permissions': typeof PermissionsIndexRoute
   '/roles': typeof RolesIndexRoute
+  '/settings': typeof SettingsIndexRoute
   '/staff': typeof StaffIndexRoute
   '/company/edit/$id': typeof CompanyEditIdRoute
   '/staff/edit/$id': typeof StaffEditIdRoute
@@ -264,6 +280,7 @@ export interface FileRoutesById {
   '/login/': typeof LoginIndexRoute
   '/permissions/': typeof PermissionsIndexRoute
   '/roles/': typeof RolesIndexRoute
+  '/settings/': typeof SettingsIndexRoute
   '/staff/': typeof StaffIndexRoute
   '/company/edit/$id': typeof CompanyEditIdRoute
   '/staff/edit/$id': typeof StaffEditIdRoute
@@ -283,6 +300,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/permissions'
     | '/roles'
+    | '/settings'
     | '/staff'
     | '/company/edit/$id'
     | '/staff/edit/$id'
@@ -299,6 +317,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/permissions'
     | '/roles'
+    | '/settings'
     | '/staff'
     | '/company/edit/$id'
     | '/staff/edit/$id'
@@ -315,6 +334,7 @@ export interface FileRouteTypes {
     | '/login/'
     | '/permissions/'
     | '/roles/'
+    | '/settings/'
     | '/staff/'
     | '/company/edit/$id'
     | '/staff/edit/$id'
@@ -333,6 +353,7 @@ export interface RootRouteChildren {
   LoginIndexRoute: typeof LoginIndexRoute
   PermissionsIndexRoute: typeof PermissionsIndexRoute
   RolesIndexRoute: typeof RolesIndexRoute
+  SettingsIndexRoute: typeof SettingsIndexRoute
   StaffIndexRoute: typeof StaffIndexRoute
   CompanyEditIdRoute: typeof CompanyEditIdRoute
   StaffEditIdRoute: typeof StaffEditIdRoute
@@ -350,6 +371,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginIndexRoute: LoginIndexRoute,
   PermissionsIndexRoute: PermissionsIndexRoute,
   RolesIndexRoute: RolesIndexRoute,
+  SettingsIndexRoute: SettingsIndexRoute,
   StaffIndexRoute: StaffIndexRoute,
   CompanyEditIdRoute: CompanyEditIdRoute,
   StaffEditIdRoute: StaffEditIdRoute,
@@ -376,6 +398,7 @@ export const routeTree = rootRoute
         "/login/",
         "/permissions/",
         "/roles/",
+        "/settings/",
         "/staff/",
         "/company/edit/$id",
         "/staff/edit/$id",
@@ -409,6 +432,9 @@ export const routeTree = rootRoute
     },
     "/roles/": {
       "filePath": "roles/index.tsx"
+    },
+    "/settings/": {
+      "filePath": "settings/index.tsx"
     },
     "/staff/": {
       "filePath": "staff/index.tsx"

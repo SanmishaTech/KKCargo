@@ -20,7 +20,8 @@ import {
   LogOut,
   Truck,
   Shield,
-  Key
+  Key,
+  Settings
 } from "lucide-react";
 
 // Define the MenuItem interface (similar to sidebar)
@@ -72,6 +73,11 @@ export const searchconfig: Record<string, MenuItem[]> = {
       url: "/activity-log",
       icon: FileText,
     },
+    {
+      title: "Settings",
+      url: "/settings",
+      icon: Settings,
+    },
   ],
   staff: [
     {
@@ -88,6 +94,11 @@ export const searchconfig: Record<string, MenuItem[]> = {
       title: "Company",
       url: "/company",
       icon: Building,
+    },
+    {
+      title: "Settings",
+      url: "/settings",
+      icon: Settings,
     },
   ],
    

@@ -62,7 +62,6 @@ const buildZodSchema = (schema: CustomSchema) => {
       } else {
         zodType = zodTypeMapping[value.type];
       }
-      console.log(value.message);
       schemaObject[key] = value.required
         ? zodType().min(1, value.message ?? "This field is required")
         : zodType().optional();
@@ -75,9 +74,25 @@ const buildZodSchema = (schema: CustomSchema) => {
 };
 
 // Main component
-const UseFormHook = <T extends z.ZodTypeAny>(schema: CustomSchema) => {
-  const zodSchema = buildZodSchema(schema.schema);
-  console.log("This is the default values", schema.defaultValues);
+const UseFormHook = <T extends z.ZodTypeAny>(props: any) => {
+  // Check if props has a nested schema property or if props itself is the schema
+  const hasNestedSchema = props.schema && typeof props.schema === 'object' && !Array.isArray(props.schema);
+  
+  let schemaData;
+  if (hasNestedSchema) {
+    // Props already has the correct structure
+    schemaData = props;
+  } else {
+    // Props IS the schema, need to wrap it
+    schemaData = { 
+      schema: props, 
+      defaultValues: props.defaultValues, 
+      onSubmit: props.onSubmit 
+    };
+  }
+  
+  
+  const zodSchema = buildZodSchema(schemaData.schema);
 
   const {
     register,
@@ -87,14 +102,16 @@ const UseFormHook = <T extends z.ZodTypeAny>(schema: CustomSchema) => {
     control,
   } = useForm<T>({
     resolver: zodResolver(zodSchema),
-    defaultValues: schema.defaultValues,
+    defaultValues: schemaData.defaultValues,
   });
   const onSubmit: SubmitHandler<T> = (data) => {
-    console.log(data);
-    // Optionally handle onSubmit data here
+    // Call the passed onSubmit if it exists
+    if (schemaData.onSubmit && typeof schemaData.onSubmit === 'function') {
+      schemaData.onSubmit(data);
+    }
   };
 
-  const Submit = schema.onSubmit ?? onSubmit;
+  const Submit = schemaData.onSubmit ? onSubmit : onSubmit;
   const password = "password";
   function capitalizeFirstLetter(str) {
     if (!str) return str;
@@ -103,7 +120,7 @@ const UseFormHook = <T extends z.ZodTypeAny>(schema: CustomSchema) => {
   return (
     <form onSubmit={handleSubmit(Submit)}>
       <div className="flex flex-col gap-2">
-        {Object.entries(schema.schema).map(([key, value]) => (
+        {Object.entries(schemaData.schema).map(([key, value]) => (
           <div key={key} className="flex min-h-[80px] flex-col items-start">
             <label htmlFor={key} className="text-sm font-bold mb-1">
               {capitalizeFirstLetter(key)}
@@ -113,20 +130,22 @@ const UseFormHook = <T extends z.ZodTypeAny>(schema: CustomSchema) => {
               name={key as any}
               control={control}
               render={({ field }) => (
-                <Input
-                  type={value.componentProps?.type}
-                  placeholder={value.componentProps?.placeholder}
-                  className={
-                    errors[`${key}`]?.message
-                      ? `border-red-500 border-2`
-                      : value.className
-                  }
-                  {...field}
-                  // {...value.componentProps}
-                />
+                  <Input
+                    type={value.componentProps?.type}
+                    placeholder={value.componentProps?.placeholder}
+                    className={
+                      errors[`${key}`]?.message
+                        ? `border-red-500 border-2`
+                        : value.className
+                    }
+                    {...field}
+                    {...value.componentProps}
+                    onChange={(e) => {
+                      field.onChange(e.target.value);
+                    }}
+                  />
               )}
             />
-            {console.log(errors[`${key}`]?.message)}
             {errors[key] && (
               <span className="text-red-500 text-xs mt-1 h-1">
                 {(errors[key] as any)?.message}

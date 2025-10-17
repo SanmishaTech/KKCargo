@@ -13,9 +13,9 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarTrigger,
 } from "../ui/sidebar";
-import { User, LogOut, Search, UserCheck, CalendarClock, Sun, Moon } from "lucide-react";
-import { CommandMenu } from "../ui/CommandMenu";
+import { User, LogOut, UserCheck, CalendarClock, Sun, Moon } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -109,8 +109,6 @@ export function AppSidebar({ role }: AppSidebarProps) {
   const profileDropdownRef = useRef<HTMLDivElement>(null);
   const profileTriggerRef = useRef<HTMLDivElement>(null);
 
-  // State for Command Menu
-  const [isCommandMenuOpen, setIsCommandMenuOpen] = useState(false);
 
   // State for Update Profile Dialog
   const [isUpdateProfileOpen, setIsUpdateProfileOpen] = useState(false);
@@ -155,18 +153,6 @@ export function AppSidebar({ role }: AppSidebarProps) {
     }
   };
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
-        event.preventDefault();
-        setIsCommandMenuOpen((prev) => !prev);
-      }
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, []);
   
   const navigate = useNavigate();
   
@@ -327,11 +313,29 @@ export function AppSidebar({ role }: AppSidebarProps) {
 
   return (
     <Sidebar variant="inset" collapsible="icon">
-      <CommandMenu open={isCommandMenuOpen} onOpenChange={setIsCommandMenuOpen} />
-      <div className="flex flex-col px-4 py-2">
+      <div className="flex items-center justify-between px-4 py-2 gap-2 group-data-[state=collapsed]:justify-center">
+        <div className="group/logo relative hidden group-data-[state=collapsed]:inline-flex">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-6 w-6 text-black dark:text-white transition-opacity duration-200 group-hover/logo:opacity-0"
+          >
+            <path
+              d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3"
+            />
+          </svg>
+          <div className="absolute inset-0 opacity-0 group-hover/logo:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+            <SidebarTrigger />
+          </div>
+        </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <div className="flex items-center cursor-pointer group-data-[state=collapsed]:justify-center">
+            <div className="flex items-center cursor-pointer group-data-[state=collapsed]:hidden">
             <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
@@ -347,22 +351,13 @@ export function AppSidebar({ role }: AppSidebarProps) {
               d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3"
             />
           </svg> 
-          <span className="ml-2 hidden md:inline group-data-[state=collapsed]:hidden text-black dark:text-white">KK Cargo</span>
+          <span className="ml-2 hidden md:inline text-black dark:text-white">KK Cargo</span>
             </div>
           </DropdownMenuTrigger>
         </DropdownMenu>
-        <div className="mt-2 flex w-full items-center gap-2 group-data-[state=collapsed]:hidden">
-          <button
-            onClick={() => setIsCommandMenuOpen(true)}
-            className="flex flex-grow items-center justify-between h-9 px-4 text-sm border border-transparent rounded-lg bg-transparent hover:bg-accent focus:outline-none focus:ring-1 focus:ring-primary"
-            aria-label="Open command menu"
-          >
-            <Search className="w-4 h-4 text-muted-foreground" />
-            <kbd className="hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100 md:flex">
-              <span className="text-xs">CTRL</span>+ K
-            </kbd>
-          </button>
+        <div className="flex items-center gap-2 group-data-[state=collapsed]:hidden">
           {/* <NotificationPopover /> */}
+          <SidebarTrigger />
           <button
             onClick={toggleTheme}
             className="p-2 rounded-md hover:bg-accent focus:outline-none"
@@ -387,7 +382,7 @@ export function AppSidebar({ role }: AppSidebarProps) {
                   item.children ? (
                     <div key={item.title}>
                       <SidebarMenuItem>
-                        <SidebarMenuButton asChild>
+                        <SidebarMenuButton asChild tooltip={item.title}>
                           <button
                             onClick={() => toggleDropdown(item.title)}
                             className={`flex items-center w-full ${item.children?.some(child => pathMatches(currentPath, child.url)) ? "bg-blue-200 text-blue-600" : ""}`}
@@ -411,7 +406,7 @@ export function AppSidebar({ role }: AppSidebarProps) {
                         <div className="ml-4">
                           {item.children.map((child: MenuItem) => (
                             <SidebarMenuItem key={child.title} className="my-1">
-                              <SidebarMenuButton asChild>
+                              <SidebarMenuButton asChild tooltip={child.title}>
                                 <a href={child.url} className={`flex items-center ${pathMatches(currentPath, child.url) ? "bg-[#339999] text-white" : ""}`}>
                                   {child.icon && React.createElement(child.icon, { className: `mr-2 ${pathMatches(currentPath, child.url) ? 'text-white' : 'text-gray-600 dark:text-blue-300'}` })}
                                   <span>{child.title}</span>
@@ -424,7 +419,7 @@ export function AppSidebar({ role }: AppSidebarProps) {
                     </div>
                   ) : (
                     <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild>
+                      <SidebarMenuButton asChild tooltip={item.title}>
                         <a href={item.url} className={`flex items-center ${item.url && pathMatches(currentPath, item.url) ? "bg-blue-100 text-blue-600" : ""}`}>
                             {item.icon && React.createElement(item.icon, { className: "mr-2 text-gray-600 dark:text-blue-300" })}
                           <span>{item.title}</span>
@@ -440,11 +435,11 @@ export function AppSidebar({ role }: AppSidebarProps) {
         <div className="border-t border-border bg-sidebar dark:bg-slate-800 p-2 sticky bottom-0 mt-auto z-10">
           <div 
             ref={profileTriggerRef}
-            className="flex items-center gap-3 cursor-pointer hover:bg-accent/20 rounded-md p-1"
+            className="flex items-center gap-3 cursor-pointer hover:bg-accent/20 rounded-md p-1 group-data-[state=collapsed]:justify-center group-data-[state=collapsed]:p-2"
             onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
             aria-label="Toggle profile menu"
           >
-            <div className="relative h-9 w-9 rounded-full bg-primary/10">
+            <div className="relative h-9 w-9 flex-shrink-0 rounded-full bg-primary/10">
               {userData.userAvatar ? (
                 <img
                   src={userData.userAvatar}
@@ -458,14 +453,14 @@ export function AppSidebar({ role }: AppSidebarProps) {
               )}
               <span className="absolute right-0 bottom-0 h-2.5 w-2.5 rounded-full bg-green-500 ring-2 ring-background"></span>
             </div>
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 overflow-hidden group-data-[state=collapsed]:hidden">
               <div className="font-medium truncate">{userData.userName}</div>
               <div className="text-xs text-muted-foreground truncate">
                 {userData.userEmail}
               </div>
             </div>
             <div
-              className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-accent/50"
+              className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-accent/50 group-data-[state=collapsed]:hidden"
             >
               <svg
                 className="h-4 w-4 text-muted-foreground"
@@ -486,8 +481,7 @@ export function AppSidebar({ role }: AppSidebarProps) {
       {profileDropdownOpen && (
         <div
           ref={profileDropdownRef}
-          className="fixed left-[calc(var(--sidebar-width)_+_8px)] bottom-16 w-56 rounded-md border bg-popover p-1 text-popover-foreground shadow-md outline-none z-50 animate-in fade-in-0 zoom-in-95"
-          style={{ transform: 'translateX(0)' }}
+          className="fixed bottom-16 w-56 rounded-md border bg-popover p-1 text-popover-foreground shadow-md outline-none z-50 animate-in fade-in-0 zoom-in-95 group-data-[state=expanded]:left-[calc(var(--sidebar-width)_+_8px)] group-data-[state=collapsed]:left-[calc(var(--sidebar-width-icon)_+_8px)]"
         >
           <div className="font-normal px-2 py-1.5 text-sm">
             <div className="flex flex-col space-y-1">

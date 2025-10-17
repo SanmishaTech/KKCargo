@@ -10,17 +10,35 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\ActivityLogController;
 use App\Http\Controllers\Api\RolesController;
 use App\Http\Controllers\Api\PermissionsController;
+use App\Http\Controllers\Api\TwoFactorController;
 
 
  
 
 Route::post('/login', [UserController::class, 'login']);
 
+// Email backup OTP routes (public - no auth required for lost phone scenario)
+Route::post('/otp/send-email', [\App\Http\Controllers\Api\EmailOTPController::class, 'sendBackupOTP']);
+Route::post('/otp/verify-email', [\App\Http\Controllers\Api\EmailOTPController::class, 'verifyEmailOTP']);
+
+// 2FA disable via email verification (public signed route)
+Route::get('/2fa/disable-verify/{user}', [TwoFactorController::class, 'disableViaEmail'])
+    ->middleware('signed')
+    ->name('2fa.disable.verify');
+
 
 Route::group(['middleware'=>['auth:sanctum', 'permission','request.null']], function(){
    
+   // Two-Factor Authentication routes
+   Route::prefix('2fa')->group(function() {
+      Route::get('/status', [TwoFactorController::class, 'status'])->name('2fa.status');
+      Route::post('/generate', [TwoFactorController::class, 'generate'])->name('2fa.generate');
+      Route::post('/enable', [TwoFactorController::class, 'enable'])->name('2fa.enable');
+      Route::post('/disable', [TwoFactorController::class, 'disable'])->name('2fa.disable');
+      Route::post('/request-disable-email', [TwoFactorController::class, 'requestDisableViaEmail'])->name('2fa.request.disable.email');
+   });
   
-   Route::resource('staff', StaffController::class);  
+   Route::resource('staff', StaffController::class);
    Route::get('/all_staff', [StaffController::class, 'allStaffs'])->name("staffs.all");
 
       // Company custom routes (keep before resource to avoid conflict)
