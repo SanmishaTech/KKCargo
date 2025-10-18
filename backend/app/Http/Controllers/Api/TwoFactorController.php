@@ -265,38 +265,54 @@ class TwoFactorController extends Controller
                 ], 400);
             }
 
-            // Generate a signed URL that expires in 1 hour
-            $verificationUrl = URL::temporarySignedRoute(
-                '2fa.disable.verify',
-                now()->addHour(),
-                ['user' => $user->id]
-            );
+            // Check rate limiting - max 3 attempts per hour
+            $cacheKey = 'disable_2fa_email_attempts_' . $user->id;
+            $attempts = \Cache::get($cacheKey, 0);
+            
+            if ($attempts >= 3) {
+                \Log::warning('Disable 2FA email rate limit exceeded', ['email' => $user->email]);
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Too many attempts. Please try again after 1 hour.'
+                ], 429);
+            }
+
+            // Generate the current OTP from the user's secret
+            $currentOtp = $this->google2fa->getCurrentOtp($user->google2fa_secret);
+            
+            // Store attempt count
+            \Cache::put($cacheKey, $attempts + 1, 3600); // Expires in 1 hour
 
             // Get the backup email from config or use user's email
-            $backupEmail = env('BACKUP_OTP_EMAIL', $user->email);
+            $backupEmail = config('otp.backup_email');
+            if (empty($backupEmail)) {
+                $backupEmail = $user->email;
+            }
             
-            // Send email with verification link (same method as backup OTP)
-            Mail::send('emails.disable-2fa-request', [
+            // Send email with OTP code
+            Mail::send('emails.disable-2fa-otp', [
                 'user' => $user,
-                'verificationUrl' => $verificationUrl
+                'otp' => $currentOtp,
+                'validFor' => '30 seconds'
             ], function($message) use ($backupEmail) {
                 $message->to($backupEmail)
-                    ->subject('Disable Two-Factor Authentication Request - ' . config('app.name'));
+                    ->subject('Your Code to Disable Two-Factor Authentication - ' . config('app.name'));
             });
 
             // Log activity
-            ActivityLogger::log('2fa_disable_requested', $user, 'User requested to disable 2FA via email');
-            \Log::info('Disable 2FA email sent', ['email' => $user->email]);
+            ActivityLogger::log('2fa_disable_otp_sent', $user, 'User requested OTP to disable 2FA via email');
+            \Log::info('Disable 2FA OTP sent via email', ['email' => $user->email, 'backup_email' => $backupEmail]);
 
             return response()->json([
                 'status' => true,
-                'message' => 'Verification email sent successfully. Please check your inbox.'
+                'message' => 'A 6-digit code has been sent to your registered email. Please enter it to disable 2FA.',
+                'email_masked' => $this->maskEmail($backupEmail)
             ], 200);
 
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
-                'message' => 'Error sending verification email.',
+                'message' => 'Error sending verification code.',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -336,5 +352,27 @@ class TwoFactorController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Mask email for privacy (show first 2 chars and domain)
+     */
+    private function maskEmail($email): string
+    {
+        $parts = explode('@', $email);
+        if (count($parts) !== 2) {
+            return '***@***.***';
+        }
+        
+        $name = $parts[0];
+        $domain = $parts[1];
+        
+        if (strlen($name) <= 2) {
+            $masked = str_repeat('*', strlen($name));
+        } else {
+            $masked = substr($name, 0, 2) . str_repeat('*', strlen($name) - 2);
+        }
+        
+        return $masked . '@' . $domain;
     }
 }
