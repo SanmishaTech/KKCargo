@@ -172,7 +172,11 @@ const Login = () => {
       // Get user role for navigation
       const role = userData.role;
       localStorage.setItem("role", role);
-        navigate({ to: "/dashboards" });
+      
+      // Set flag to show today's follow-up popup
+      sessionStorage.setItem("showFollowupPopup", "true");
+      
+      navigate({ to: "/dashboards" });
       toast.success("Successfully Logged In");
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || "Failed to log in. Check your credentials.";

@@ -4,7 +4,7 @@ import Dashboard from "./Dashboardreuse";
 import userAvatar from "@/images/Profile.jpg";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
   Select,
   SelectContent,
@@ -64,7 +64,8 @@ export default function Dashboardholiday() {
     perPage: 10,
     total: 0,
   });
-  const [searchQuery, setSearchQuery] = useState("");
+  const routeSearch: any = useSearch({ from: "/company/" });
+  const [searchQuery, setSearchQuery] = useState(routeSearch?.search ?? "");
   const [filter, setFilter] = useState<{dateFilter?: string, companyType?: string, city?: string}>({});
   const [statusOptions] = useState([
     { value: "interested", label: "Interested" },
@@ -146,6 +147,14 @@ export default function Dashboardholiday() {
       setError(queryError as any);
     }
   }, [queryError]);
+
+  // Update local state when route search param changes (e.g., from dashboard row click)
+  useEffect(() => {
+    if ((routeSearch?.search ?? "") !== searchQuery) {
+      setSearchQuery(routeSearch?.search ?? "");
+      setPaginationState((prev) => ({ ...prev, currentPage: 1 }));
+    }
+  }, [routeSearch?.search]);
 
   // Wrapper function – we now rely on the shared GET hook for actual fetching
   const fetchData = (query: string = "", page: number = 1) => {

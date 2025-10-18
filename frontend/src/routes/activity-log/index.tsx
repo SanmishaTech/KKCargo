@@ -97,7 +97,7 @@ function ActivityLogPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="max-w-7xl mx-auto px-4 py-6" style={{overflow: 'visible'}}>
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Activity Log</h1>
@@ -180,52 +180,130 @@ function ActivityLogPage() {
         </div>
 
         {/* Activity Log Table */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">Recent Activities</h2>
           </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
+          <div style={{overflowX: 'auto', overflowY: 'visible', paddingTop: '150px', marginTop: '-150px'}}>
+            <table className="min-w-full divide-y divide-gray-200" style={{overflow: 'visible'}}>
           <thead className="bg-gray-50">
             <tr>
-              <th className="text-left p-4 font-semibold text-gray-700 border-b">Time</th>
-              <th className="text-left p-4 font-semibold text-gray-700 border-b">User</th>
-              <th className="text-left p-4 font-semibold text-gray-700 border-b">Action</th>
-              <th className="text-left p-4 font-semibold text-gray-700 border-b">Description</th>
-              <th className="text-left p-4 font-semibold text-gray-700 border-b">IP Address</th>
+              <th className="text-left p-4 font-semibold text-gray-700 border-b" style={{width: '150px'}}>Time</th>
+              <th className="text-left p-4 font-semibold text-gray-700 border-b" style={{width: '100px'}}>User</th>
+              <th className="text-left p-4 font-semibold text-gray-700 border-b" style={{width: '150px'}}>Action</th>
+              <th className="text-left p-4 font-semibold text-gray-700 border-b" style={{width: '200px'}}>Description</th>
+              <th className="text-left p-4 font-semibold text-gray-700 border-b" style={{width: '180px'}}>Company Name</th>
+              <th className="text-left p-4 font-semibold text-gray-700 border-b" style={{width: '250px'}}>Remarks</th>
+              <th className="text-left p-4 font-semibold text-gray-700 border-b" style={{width: '120px'}}>Status</th>
+              <th className="text-left p-4 font-semibold text-gray-700 border-b" style={{width: '130px'}}>IP Address</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody style={{overflow: 'visible'}}>
             {isLoading && (
               <tr>
-                <td className="p-4 text-center text-gray-500" colSpan={5}>Loading activity logs...</td>
+                <td className="p-4 text-center text-gray-500" colSpan={8}>Loading activity logs...</td>
               </tr>
             )}
             {isError && (
               <tr>
-                <td className="p-4 text-center text-red-600" colSpan={5}>Error loading activity logs</td>
+                <td className="p-4 text-center text-red-600" colSpan={8}>Error loading activity logs</td>
               </tr>
             )}
             {!isLoading && !isError && logs.length === 0 && (
               <tr>
-                <td className="p-4 text-center text-gray-500" colSpan={5}>No activity found</td>
+                <td className="p-4 text-center text-gray-500" colSpan={8}>No activity found</td>
               </tr>
             )}
-            {logs.map((log, index) => (
-              <tr key={log.id} className={`border-b hover:bg-gray-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`}>
-                <td className="p-4 whitespace-nowrap text-sm text-gray-900">{formatDate(log.created_at)}</td>
-                <td className="p-4 text-sm">
-                  <span className="font-medium text-gray-900">{log.user_name || 'System'}</span>
-                </td>
-                <td className="p-4 text-sm">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    {log.action}
-                  </span>
-                </td>
-                <td className="p-4 text-sm text-gray-600">{log.description || '-'}</td>
-                <td className="p-4 text-sm text-gray-500 font-mono">{log.ip_address || '-'}</td>
-              </tr>
-            ))}
+            {logs.map((log, index) => {
+              const companyName = log.properties?.company_name || '-';
+              const companyNameTruncated = log.properties?.company_name && log.properties.company_name.length > 30 ? log.properties.company_name.substring(0, 30) + '...' : companyName;
+              const remarks = log.properties?.remarks ? (log.properties.remarks.length > 50 ? log.properties.remarks.substring(0, 50) + '...' : log.properties.remarks) : '-';
+              const status = log.properties?.status || log.properties?.new_status || '-';
+              
+              return (
+                <tr key={log.id} className={`border-b hover:bg-gray-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`} style={{overflow: 'visible'}}>
+                  <td className="p-4 whitespace-nowrap text-sm text-gray-900" style={{width: '150px'}}>{formatDate(log.created_at)}</td>
+                  <td className="p-4 text-sm" style={{width: '100px'}}>
+                    <span className="font-medium text-gray-900">{log.user_name || 'System'}</span>
+                  </td>
+                  <td className="p-4 text-sm" style={{width: '150px'}}>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      {log.action}
+                    </span>
+                  </td>
+                  <td className="p-4 text-sm text-gray-600" style={{width: '200px', wordBreak: 'break-word'}}>{log.description || '-'}</td>
+                  <td className="p-4 text-sm text-gray-900" style={{width: '180px'}}>
+                    {companyName !== '-' ? (
+                      <div className="relative group">
+                        <div 
+                          className="font-medium break-words cursor-help" 
+                          style={{wordBreak: 'break-word', overflowWrap: 'break-word'}}
+                        >
+                          {companyNameTruncated}
+                        </div>
+                        {log.properties?.company_name && log.properties.company_name.length > 30 && (
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 hidden group-hover:block z-[9999] w-64 pointer-events-none">
+                            <div className="bg-gray-900 text-white text-xs rounded-lg py-2 px-3 shadow-xl pointer-events-auto">
+                              <div className="break-words">
+                                {log.properties.company_name}
+                              </div>
+                              {/* Arrow */}
+                              <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-px">
+                                <div className="border-8 border-transparent border-t-gray-900"></div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
+                  </td>
+                  <td className="p-4 text-sm text-gray-600" style={{width: '250px'}}>
+                    {remarks !== '-' ? (
+                      <div className="relative group">
+                        <div 
+                          className="break-words overflow-hidden cursor-help" 
+                          style={{wordBreak: 'break-word', overflowWrap: 'break-word'}}
+                        >
+                          {remarks}
+                        </div>
+                        {log.properties?.remarks && log.properties.remarks.length > 50 && (
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 hidden group-hover:block z-[9999] w-72 pointer-events-none">
+                            <div className="bg-gray-900 text-white text-xs rounded-lg py-2 px-3 shadow-xl pointer-events-auto">
+                              <div className="max-h-32 overflow-y-auto break-words">
+                                {log.properties.remarks}
+                              </div>
+                              {/* Arrow */}
+                              <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-px">
+                                <div className="border-8 border-transparent border-t-gray-900"></div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
+                  </td>
+                  <td className="p-4 text-sm" style={{width: '120px'}}>
+                    {status !== '-' ? (
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                        status === 'interested' ? 'bg-green-100 text-green-800' :
+                        status === 'waiting' ? 'bg-yellow-100 text-yellow-800' :
+                        status === 'not_interested' ? 'bg-red-100 text-red-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {status.replace(/_/g, ' ')}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
+                  </td>
+                  <td className="p-4 text-sm text-gray-500 font-mono" style={{width: '130px'}}>{log.ip_address || '-'}</td>
+                </tr>
+              );
+            })}
           </tbody>
             </table>
           </div>

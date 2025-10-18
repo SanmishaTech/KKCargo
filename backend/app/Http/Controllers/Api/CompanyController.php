@@ -113,7 +113,10 @@ class CompanyController extends BaseController
          $company->save();
 
         // Log company creation
-        ActivityLogger::log('company.created', $company, 'Company created', ['company_name' => $company->company_name]);
+        ActivityLogger::log('company.created', $company, 'Company created', [
+            'company_name' => $company->company_name,
+            'status' => $company->status
+        ]);
         
         return $this->sendResponse([new CompanyResource($company)], "Company stored successfully");
     }
@@ -173,7 +176,10 @@ class CompanyController extends BaseController
         $company->save();
 
         // Log company update
-        ActivityLogger::log('company.updated', $company, 'Company updated', ['company_name' => $company->company_name]);
+        ActivityLogger::log('company.updated', $company, 'Company updated', [
+            'company_name' => $company->company_name,
+            'status' => $company->status
+        ]);
        
         return $this->sendResponse([ new CompanyResource($company)], "Company updated successfully");
 
@@ -257,10 +263,18 @@ class CompanyController extends BaseController
         if(!$company){
             return $this->sendError("Company not found", ['error'=> 'Company not found']);
         }
+        
+         // Store data before deletion
+         $logData = [
+             'company_id' => (int)$id,
+             'company_name' => $company->company_name,
+             'status' => $company->status
+         ];
+         
          $company->delete();
 
          // Log company deletion
-         ActivityLogger::log('company.deleted', 'App\\Models\\Company', 'Company deleted', ['company_id' => (int)$id]);
+         ActivityLogger::log('company.deleted', 'App\\Models\\Company', 'Company deleted', $logData);
          return $this->sendResponse([], "Company deleted successfully");
     }
 
@@ -280,10 +294,18 @@ class CompanyController extends BaseController
 
         try {
             $ids = $request->input('ids');
+            
+            // Get company details before deletion for logging
+            $companies = Company::whereIn('id', $ids)->get(['id', 'company_name', 'status'])->toArray();
+            
             $deletedCount = Company::whereIn('id', $ids)->delete();
             
             // Log bulk delete
-            ActivityLogger::log('company.bulk_deleted', 'App\\Models\\Company', 'Bulk delete companies', ['ids' => $ids, 'deleted_count' => $deletedCount]);
+            ActivityLogger::log('company.bulk_deleted', 'App\\Models\\Company', 'Bulk delete companies', [
+                'ids' => $ids,
+                'deleted_count' => $deletedCount,
+                'companies' => $companies
+            ]);
 
             return $this->sendResponse(
                 ['deleted_count' => $deletedCount], 
@@ -410,7 +432,11 @@ EOT;
             }
 
             // Log brochure sent
-            ActivityLogger::log('brochure.sent', $company, 'Brochure sent', ['email' => $request->email]);
+            ActivityLogger::log('brochure.sent', $company, 'Brochure sent', [
+                'email' => $request->email,
+                'company_name' => $company->company_name,
+                'status' => $company->status
+            ]);
 
             return $this->sendResponse([], 'Brochure sent successfully');
         } catch (\Exception $e) {
@@ -558,8 +584,16 @@ EOT;
                 'status' => 'required|string|in:interested,not_interested,not_answering,wrong_number,busy_on_call'
             ]);
 
+            $oldStatus = $company->status;
             $company->status = $request->input('status');
             $company->save();
+
+            // Log status change
+            ActivityLogger::log('company.status_updated', $company, 'Company status updated', [
+                'company_name' => $company->company_name,
+                'old_status' => $oldStatus,
+                'new_status' => $request->input('status')
+            ]);
 
             return $this->sendResponse(
                 ['status' => $request->input('status')],

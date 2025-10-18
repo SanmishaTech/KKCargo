@@ -52,7 +52,13 @@ class FollowUpController extends BaseController
          $followup->save();
 
         // Log followup created
-        ActivityLogger::log('followup.created', $followup, 'Follow-up created', ['company_id' => $followup->company_id]);
+        $followup->load('company');
+        ActivityLogger::log('followup.created', $followup, 'Follow-up created', [
+            'company_id' => $followup->company_id,
+            'company_name' => $followup->company ? $followup->company->company_name : null,
+            'remarks' => $followup->remarks,
+            'status' => $followup->company ? $followup->company->status : null
+        ]);
         
         return $this->sendResponse([new FollowupResource($followup)], "Followup stored successfully");
     }
@@ -90,7 +96,13 @@ class FollowUpController extends BaseController
         $followup->save();
 
         // Log followup updated
-        ActivityLogger::log('followup.updated', $followup, 'Follow-up updated', ['company_id' => $followup->company_id]);
+        $followup->load('company');
+        ActivityLogger::log('followup.updated', $followup, 'Follow-up updated', [
+            'company_id' => $followup->company_id,
+            'company_name' => $followup->company ? $followup->company->company_name : null,
+            'remarks' => $followup->remarks,
+            'status' => $followup->company ? $followup->company->status : null
+        ]);
        
         return $this->sendResponse([ new FollowupResource($followup)], "Followup updated successfully");
 
@@ -99,14 +111,24 @@ class FollowUpController extends BaseController
 
     public function destroy(string $id): JsonResponse
     {
-        $followup = FollowUp::find($id);
+        $followup = FollowUp::with('company')->find($id);
         if(!$followup){
             return $this->sendError("Followup not found", ['error'=> 'Followup not found']);
         }
+        
+         // Store data before deletion
+         $logData = [
+             'followup_id' => (int)$id,
+             'company_id' => $followup->company_id,
+             'company_name' => $followup->company ? $followup->company->company_name : null,
+             'remarks' => $followup->remarks,
+             'status' => $followup->company ? $followup->company->status : null
+         ];
+         
          $followup->delete();
 
          // Log followup deleted
-         ActivityLogger::log('followup.deleted', 'App\\Models\\FollowUp', 'Follow-up deleted', ['followup_id' => (int)$id]);
+         ActivityLogger::log('followup.deleted', 'App\\Models\\FollowUp', 'Follow-up deleted', $logData);
          return $this->sendResponse([], "Followup deleted successfully");
     }
 
@@ -143,6 +165,9 @@ class FollowUpController extends BaseController
             // Log status update
             ActivityLogger::log('followup.status_updated', $followup, 'Follow-up status updated', [
                 'company_id' => $followup->company_id,
+                'company_name' => $followup->company->company_name,
+                'remarks' => $followup->remarks,
+                'status' => $request->input('status'),
                 'new_status' => $request->input('status')
             ]);
 

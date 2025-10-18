@@ -12,6 +12,7 @@
 
 import { Route as rootRoute } from './routes/__root'
 import { Route as IndexImport } from './routes/index'
+import { Route as TodayFollowupIndexImport } from './routes/today-followup/index'
 import { Route as StaffIndexImport } from './routes/staff/index'
 import { Route as SettingsIndexImport } from './routes/settings/index'
 import { Route as RolesIndexImport } from './routes/roles/index'
@@ -32,6 +33,12 @@ import { Route as CompanyEditIdImport } from './routes/company/edit/$id'
 const IndexRoute = IndexImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const TodayFollowupIndexRoute = TodayFollowupIndexImport.update({
+  id: '/today-followup/',
+  path: '/today-followup/',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -200,6 +207,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StaffIndexImport
       parentRoute: typeof rootRoute
     }
+    '/today-followup/': {
+      id: '/today-followup/'
+      path: '/today-followup'
+      fullPath: '/today-followup'
+      preLoaderRoute: typeof TodayFollowupIndexImport
+      parentRoute: typeof rootRoute
+    }
     '/company/edit/$id': {
       id: '/company/edit/$id'
       path: '/company/edit/$id'
@@ -245,6 +259,7 @@ export interface FileRoutesByFullPath {
   '/roles': typeof RolesIndexRoute
   '/settings': typeof SettingsIndexRoute
   '/staff': typeof StaffIndexRoute
+  '/today-followup': typeof TodayFollowupIndexRoute
   '/company/edit/$id': typeof CompanyEditIdRoute
   '/staff/edit/$id': typeof StaffEditIdRoute
   '/company/add': typeof CompanyAddIndexRoute
@@ -263,6 +278,7 @@ export interface FileRoutesByTo {
   '/roles': typeof RolesIndexRoute
   '/settings': typeof SettingsIndexRoute
   '/staff': typeof StaffIndexRoute
+  '/today-followup': typeof TodayFollowupIndexRoute
   '/company/edit/$id': typeof CompanyEditIdRoute
   '/staff/edit/$id': typeof StaffEditIdRoute
   '/company/add': typeof CompanyAddIndexRoute
@@ -282,6 +298,7 @@ export interface FileRoutesById {
   '/roles/': typeof RolesIndexRoute
   '/settings/': typeof SettingsIndexRoute
   '/staff/': typeof StaffIndexRoute
+  '/today-followup/': typeof TodayFollowupIndexRoute
   '/company/edit/$id': typeof CompanyEditIdRoute
   '/staff/edit/$id': typeof StaffEditIdRoute
   '/company/add/': typeof CompanyAddIndexRoute
@@ -302,6 +319,7 @@ export interface FileRouteTypes {
     | '/roles'
     | '/settings'
     | '/staff'
+    | '/today-followup'
     | '/company/edit/$id'
     | '/staff/edit/$id'
     | '/company/add'
@@ -319,6 +337,7 @@ export interface FileRouteTypes {
     | '/roles'
     | '/settings'
     | '/staff'
+    | '/today-followup'
     | '/company/edit/$id'
     | '/staff/edit/$id'
     | '/company/add'
@@ -336,6 +355,7 @@ export interface FileRouteTypes {
     | '/roles/'
     | '/settings/'
     | '/staff/'
+    | '/today-followup/'
     | '/company/edit/$id'
     | '/staff/edit/$id'
     | '/company/add/'
@@ -355,6 +375,7 @@ export interface RootRouteChildren {
   RolesIndexRoute: typeof RolesIndexRoute
   SettingsIndexRoute: typeof SettingsIndexRoute
   StaffIndexRoute: typeof StaffIndexRoute
+  TodayFollowupIndexRoute: typeof TodayFollowupIndexRoute
   CompanyEditIdRoute: typeof CompanyEditIdRoute
   StaffEditIdRoute: typeof StaffEditIdRoute
   CompanyAddIndexRoute: typeof CompanyAddIndexRoute
@@ -373,6 +394,7 @@ const rootRouteChildren: RootRouteChildren = {
   RolesIndexRoute: RolesIndexRoute,
   SettingsIndexRoute: SettingsIndexRoute,
   StaffIndexRoute: StaffIndexRoute,
+  TodayFollowupIndexRoute: TodayFollowupIndexRoute,
   CompanyEditIdRoute: CompanyEditIdRoute,
   StaffEditIdRoute: StaffEditIdRoute,
   CompanyAddIndexRoute: CompanyAddIndexRoute,
@@ -400,6 +422,7 @@ export const routeTree = rootRoute
         "/roles/",
         "/settings/",
         "/staff/",
+        "/today-followup/",
         "/company/edit/$id",
         "/staff/edit/$id",
         "/company/add/",
@@ -438,6 +461,9 @@ export const routeTree = rootRoute
     },
     "/staff/": {
       "filePath": "staff/index.tsx"
+    },
+    "/today-followup/": {
+      "filePath": "today-followup/index.tsx"
     },
     "/company/edit/$id": {
       "filePath": "company/edit/$id.tsx"

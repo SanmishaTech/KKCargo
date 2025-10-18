@@ -25,6 +25,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useNavigate } from "@tanstack/react-router";
 
 
 export default function ResponsiveLabDashboard() {
@@ -42,6 +50,8 @@ export default function ResponsiveLabDashboard() {
   const [currentPage, setCurrentPage] = useState(1);
   const [nextPageUrl, setNextPageUrl] = useState<string | null>(null);
   const [prevPageUrl, setPrevPageUrl] = useState<string | null>(null);
+  const [showTodayFollowupPopup, setShowTodayFollowupPopup] = useState(false);
+  const [todayFollowups, setTodayFollowups] = useState<any[]>([]);
 
 
   useGetData({
@@ -103,7 +113,117 @@ export default function ResponsiveLabDashboard() {
     };
   }, []);
 
+  // Fetch today's follow-ups and show popup only after login
+  useEffect(() => {
+    const shouldShowPopup = sessionStorage.getItem("showFollowupPopup");
+    
+    if (shouldShowPopup === "true") {
+      const fetchTodayFollowups = async () => {
+        try {
+          const today = new Date().toISOString().split("T")[0];
+          const response = await axios.get(`/api/dashboard?next_follow_up_date=${today}`, {
+            headers: {
+              Authorization: "Bearer " + localStorage.getItem("token"),
+            },
+          });
+
+          if (response.data?.status && response.data?.data?.follow_ups?.data) {
+            const followups = response.data.data.follow_ups.data;
+            if (followups.length > 0) {
+              setTodayFollowups(followups);
+              setShowTodayFollowupPopup(true);
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching today's follow-ups:", error);
+        }
+      };
+
+      fetchTodayFollowups();
+      // Clear the flag after showing popup
+      sessionStorage.removeItem("showFollowupPopup");
+    }
+  }, []);
+
+  const navigate = useNavigate();
   return (
+    <>
+      {/* Today's Follow-up Popup */}
+      <Dialog open={showTodayFollowupPopup} onOpenChange={setShowTodayFollowupPopup}>
+        <DialogContent className="max-w-4xl bg-white">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-2xl">
+              <CalendarClock className="h-6 w-6" />
+              Today's Follow-ups ({todayFollowups.length})
+            </DialogTitle>
+            <DialogDescription>
+              {new Date().toLocaleDateString("en-US", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Company Name</TableHead>
+                  <TableHead>Remark</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {todayFollowups.slice(0, 7).map((followUp) => (
+                  <TableRow key={followUp.id}>
+                    <TableCell className="font-medium">{followUp.company_name}</TableCell>
+                    <TableCell>{followUp.remarks}</TableCell>
+                    <TableCell>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        {followUp.status}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setShowTodayFollowupPopup(false);
+                          navigate({ to: "/company", search: { search: followUp.company_name || "" } });
+                        }}
+                      >
+                        View Details
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            {todayFollowups.length > 7 && (
+              <div className="mt-3 text-center">
+                <Button
+                  variant="link"
+                  onClick={() => {
+                    setShowTodayFollowupPopup(false);
+                    navigate({ to: "/today-followup" });
+                  }}
+                  className="text-blue-600 hover:text-blue-700"
+                >
+                  See more ({todayFollowups.length - 7} more follow-ups)
+                </Button>
+              </div>
+            )}
+          </div>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button onClick={() => setShowTodayFollowupPopup(false)}>
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
     <div className="flex h-screen ">
       {/* Sidebar for larger screens */}
       {/* <Sidebar className="hidden md:block w-64 shadow-md" /> */}
@@ -225,7 +345,11 @@ export default function ResponsiveLabDashboard() {
                 <TableBody>
                   {followUps.length > 0 ? (
                     followUps.map((followUp) => (
-                      <TableRow key={followUp.id}>
+                      <TableRow
+                        key={followUp.id}
+                        className="cursor-pointer hover:bg-muted/40"
+                        onClick={() => navigate({ to: "/company", search: { search: followUp.company_name || "" } })}
+                      >
                         <TableCell className="font-medium">{followUp.company_name}</TableCell>
                         <TableCell>
                           {followUp.next_follow_up_date && !isNaN(new Date(followUp.next_follow_up_date).getTime())
@@ -291,5 +415,6 @@ export default function ResponsiveLabDashboard() {
         </div>
       </main>
     </div>
+    </>
   );
 }

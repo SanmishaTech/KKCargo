@@ -43,6 +43,11 @@ export const searchconfig: Record<string, MenuItem[]> = {
       icon: Home,
     },
     {
+      title: "Today Follow-up",
+      url: "/today-followup",
+      icon: Calendar,
+    },
+    {
       title: "Staff",
       url: "/staff",
       icon: Users,
@@ -74,7 +79,7 @@ export const searchconfig: Record<string, MenuItem[]> = {
       icon: FileText,
     },
     {
-      title: "Settings",
+      title: "2FA Settings",
       url: "/settings",
       icon: Settings,
     },
@@ -84,6 +89,11 @@ export const searchconfig: Record<string, MenuItem[]> = {
       title: "Dashboard",
       url: "/dashboards",
       icon: Home,
+    },
+    {
+      title: "Today Follow-up",
+      url: "/today-followup",
+      icon: Calendar,
     },
     {
       title: "Staff",

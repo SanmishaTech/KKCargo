@@ -57,6 +57,10 @@ class DashboardController extends Controller
                 });
             }
 
+            if ($request->has('next_follow_up_date') && !empty($request->next_follow_up_date)) {
+                $followUpsQuery->whereDate('next_follow_up_date', $request->next_follow_up_date);
+            }
+
             return response()->json([
                 'status' => true,
                 'data' => [
