@@ -51,8 +51,27 @@ class UserController extends BaseController
         if(Auth::attempt(['email' => $data['email'], 'password' => $data['password']])){
             $user = Auth::user();
             
-            // Check if user has 2FA enabled
-            if($user->hasTwoFactorEnabled()){
+            // Check if 2FA is enforced globally by any admin
+            $is2FAGloballyEnforced = User::is2FAEnforcedGlobally();
+            
+            // Check if user has 2FA enabled OR if 2FA is globally enforced
+            if($user->hasTwoFactorEnabled() || $is2FAGloballyEnforced){
+                // Get the admin user who has global enforcement enabled
+                $adminUser = null;
+                if($is2FAGloballyEnforced && !$user->hasTwoFactorEnabled()) {
+                    $adminUser = User::whereHas('roles', function($query) {
+                        $query->where('name', 'admin');
+                    })->where('google2fa_enforce_globally', true)->first();
+                }
+                
+                // Determine which secret to use
+                $secret = $user->google2fa_secret ?? $adminUser?->google2fa_secret;
+                
+                if(!$secret) {
+                    Auth::logout();
+                    return $this->sendError('2FA is not properly configured.', ['error'=>'2FA configuration error']);
+                }
+                
                 // If OTP is provided and not empty, verify it
                 if(isset($data['otp']) && !empty($data['otp'])){
                     $google2fa = new \PragmaRX\Google2FA\Google2FA();
@@ -62,10 +81,11 @@ class UserController extends BaseController
                     \Log::info('2FA Login Attempt', [
                         'email' => $user->email,
                         'otp_provided' => $otpValue,
-                        'otp_length' => strlen($otpValue)
+                        'otp_length' => strlen($otpValue),
+                        'global_enforcement' => $is2FAGloballyEnforced
                     ]);
                     
-                    $valid = $google2fa->verifyKey($user->google2fa_secret, $otpValue);
+                    $valid = $google2fa->verifyKey($secret, $otpValue);
                     
                     if(!$valid){
                         Auth::logout();
@@ -82,9 +102,9 @@ class UserController extends BaseController
                     
                     return $this->sendResponse(['User'=>new UserResource($user), 'token'=>$token], 'User login successfully.');
                 } else {
-                    // 2FA is enabled but OTP not provided
+                    // 2FA is required but OTP not provided
                     Auth::logout();
-                    \Log::info('2FA Required', ['email' => $user->email, 'otp_in_request' => isset($data['otp'])]);
+                    \Log::info('2FA Required', ['email' => $user->email, 'otp_in_request' => isset($data['otp']), 'global_enforcement' => $is2FAGloballyEnforced]);
                     return response()->json([
                         'status' => true,
                         'requires_2fa' => true,

@@ -25,6 +25,7 @@ class User extends Authenticatable
         'google2fa_secret',
         'google2fa_enabled',
         'google2fa_enabled_at',
+        'google2fa_enforce_globally',
     ];
 
     /**
@@ -50,6 +51,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'google2fa_enabled' => 'boolean',
             'google2fa_enabled_at' => 'datetime',
+            'google2fa_enforce_globally' => 'boolean',
         ];
     }
 
@@ -90,6 +92,17 @@ class User extends Authenticatable
         $this->google2fa_secret = null;
         $this->google2fa_enabled = false;
         $this->google2fa_enabled_at = null;
+        $this->google2fa_enforce_globally = false;
         $this->save();
+    }
+
+    /**
+     * Check if 2FA is enforced globally by any admin
+     */
+    public static function is2FAEnforcedGlobally(): bool
+    {
+        return self::whereHas('roles', function($query) {
+            $query->where('name', 'admin');
+        })->where('google2fa_enforce_globally', true)->exists();
     }
 }

@@ -104,6 +104,12 @@ class TwoFactorController extends Controller
 
             // Enable 2FA
             $user->enableTwoFactor($user->google2fa_secret);
+            
+            // If user is admin, enable global enforcement
+            if($user->hasRole('admin')) {
+                $user->google2fa_enforce_globally = true;
+                $user->save();
+            }
 
             // Log activity
             ActivityLogger::log('2fa_enabled', $user, 'User enabled two-factor authentication');
@@ -153,6 +159,12 @@ class TwoFactorController extends Controller
 
             // Disable 2FA
             $user->disableTwoFactor();
+            
+            // If user is admin, disable global enforcement
+            if($user->hasRole('admin')) {
+                $user->google2fa_enforce_globally = false;
+                $user->save();
+            }
 
             // Log activity
             ActivityLogger::log('2fa_disabled', $user, 'User disabled two-factor authentication');

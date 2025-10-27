@@ -95,11 +95,6 @@ export const searchconfig: Record<string, MenuItem[]> = {
       url: "/today-followup",
       icon: Calendar,
     },
-    {
-      title: "Settings",
-      url: "/settings",
-      icon: Settings,
-    },
   ],
    
 };
