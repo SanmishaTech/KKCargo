@@ -139,16 +139,41 @@ class TwoFactorController extends Controller
 
         try {
             $user = Auth::user();
-
-            if (!$user->hasTwoFactorEnabled()) {
+            
+            // Check if 2FA is globally enforced
+            $isGloballyEnforced = \App\Models\User::is2FAEnforcedGlobally();
+            
+            // Check if user has own 2FA OR if they're admin trying to disable global enforcement
+            if (!$user->hasTwoFactorEnabled() && !($isGloballyEnforced && $user->hasRole('admin'))) {
                 return response()->json([
                     'status' => false,
                     'message' => '2FA is not enabled.'
                 ], 400);
             }
+            
+            // Get the secret to verify OTP
+            $secret = $user->google2fa_secret;
+            
+            // If user doesn't have own 2FA but is admin, use the admin's secret who enabled global enforcement
+            if (!$secret && $isGloballyEnforced && $user->hasRole('admin')) {
+                $adminUser = \App\Models\User::whereHas('roles', function($query) {
+                    $query->where('name', 'admin');
+                })->where('google2fa_enforce_globally', true)->first();
+                
+                if ($adminUser) {
+                    $secret = $adminUser->google2fa_secret;
+                }
+            }
+            
+            if (!$secret) {
+                return response()->json([
+                    'status' => false,
+                    'message' => '2FA secret not found.'
+                ], 400);
+            }
 
             // Verify the OTP before disabling
-            $valid = $this->google2fa->verifyKey($user->google2fa_secret, $request->otp);
+            $valid = $this->google2fa->verifyKey($secret, $request->otp);
 
             if (!$valid) {
                 return response()->json([
@@ -157,17 +182,23 @@ class TwoFactorController extends Controller
                 ], 400);
             }
 
-            // Disable 2FA
-            $user->disableTwoFactor();
-            
-            // If user is admin, disable global enforcement
+            // If user is admin, disable global enforcement for ALL admins
             if($user->hasRole('admin')) {
-                $user->google2fa_enforce_globally = false;
-                $user->save();
+                // Disable global enforcement for all admins who have it enabled
+                \App\Models\User::whereHas('roles', function($query) {
+                    $query->where('name', 'admin');
+                })->where('google2fa_enforce_globally', true)
+                  ->update(['google2fa_enforce_globally' => false]);
+                  
+                // Log activity
+                ActivityLogger::log('2fa_disabled', $user, 'Admin disabled global two-factor authentication');
             }
-
-            // Log activity
-            ActivityLogger::log('2fa_disabled', $user, 'User disabled two-factor authentication');
+            
+            // Disable user's own 2FA if they have it
+            if ($user->hasTwoFactorEnabled()) {
+                $user->disableTwoFactor();
+                ActivityLogger::log('2fa_disabled', $user, 'User disabled two-factor authentication');
+            }
 
             return response()->json([
                 'status' => true,
@@ -244,12 +275,37 @@ class TwoFactorController extends Controller
     {
         try {
             $user = Auth::user();
+            
+            // Check if 2FA is globally enforced
+            $isGloballyEnforced = \App\Models\User::is2FAEnforcedGlobally();
+            
+            // Check if current user has their own 2FA enabled OR if it's globally enforced
+            $isEnabled = $user->hasTwoFactorEnabled() || $isGloballyEnforced;
+            
+            // Get the admin who enabled global enforcement if applicable
+            $enforcedBy = null;
+            if ($isGloballyEnforced && !$user->hasTwoFactorEnabled()) {
+                $adminUser = \App\Models\User::whereHas('roles', function($query) {
+                    $query->where('name', 'admin');
+                })->where('google2fa_enforce_globally', true)->first();
+                
+                if ($adminUser) {
+                    $enforcedBy = [
+                        'name' => $adminUser->name,
+                        'email' => $adminUser->email,
+                        'enabled_at' => $adminUser->google2fa_enabled_at,
+                    ];
+                }
+            }
 
             return response()->json([
                 'status' => true,
                 'data' => [
-                    'enabled' => $user->hasTwoFactorEnabled(),
+                    'enabled' => $isEnabled,
                     'enabled_at' => $user->google2fa_enabled_at,
+                    'globally_enforced' => $isGloballyEnforced,
+                    'enforced_by' => $enforcedBy,
+                    'has_own_2fa' => $user->hasTwoFactorEnabled(),
                 ]
             ], 200);
 
