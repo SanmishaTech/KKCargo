@@ -35,7 +35,18 @@ class CompanyController extends BaseController
             $query->where('city', 'like', '%' . $city . '%');
         }
 
-        // Date filtering by month and year
+        // Status filtering
+        if ($status = $request->query('status')) {
+            $query->where('status', $status);
+        }
+
+        // Independent date filtering by day, month, and year
+        // User can filter by any combination: only day, only month, only year, or any combination
+        
+        if ($day = $request->query('day')) {
+            $query->whereDay('created_at', $day);
+        }
+        
         if ($month = $request->query('month')) {
             $query->whereMonth('created_at', $month);
         }
@@ -44,10 +55,41 @@ class CompanyController extends BaseController
             $query->whereYear('created_at', $year);
         }
         
-        // If both month and year are provided, filter by both
+        // If date_filter is provided, filter by year-month-day or year-month
         if ($request->query('date_filter')) {
-            $dateFilter = $request->query('date_filter'); // Format: YYYY-MM
-            if (preg_match('/^(\d{4})-(\d{2})$/', $dateFilter, $matches)) {
+            $dateFilter = $request->query('date_filter'); // Format: YYYY-MM-DD or YYYY-MM
+            // Check for full date format (YYYY-MM-DD)
+            if (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $dateFilter, $matches)) {
+                $year = $matches[1];
+                $month = $matches[2];
+                $day = $matches[3];
+                $query->whereYear('created_at', $year)
+                      ->whereMonth('created_at', $month)
+                      ->whereDay('created_at', $day);
+            }
+            // Check for month format (YYYY-MM)
+            elseif (preg_match('/^(\d{4})-(\d{2})$/', $dateFilter, $matches)) {
+                $year = $matches[1];
+                $month = $matches[2];
+                $query->whereYear('created_at', $year)
+                      ->whereMonth('created_at', $month);
+            }
+        }
+
+        // Created at filtering (for filtering by creation date)
+        if ($request->query('created_at')) {
+            $createdAt = $request->query('created_at'); // Format: YYYY-MM-DD or YYYY-MM
+            // Check for full date format (YYYY-MM-DD)
+            if (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $createdAt, $matches)) {
+                $year = $matches[1];
+                $month = $matches[2];
+                $day = $matches[3];
+                $query->whereYear('created_at', $year)
+                      ->whereMonth('created_at', $month)
+                      ->whereDay('created_at', $day);
+            }
+            // Check for month format (YYYY-MM)
+            elseif (preg_match('/^(\d{4})-(\d{2})$/', $createdAt, $matches)) {
                 $year = $matches[1];
                 $month = $matches[2];
                 $query->whereYear('created_at', $year)
@@ -57,6 +99,13 @@ class CompanyController extends BaseController
 
         // Order by created_at desc to show latest first
         $query->orderBy('created_at', 'desc');
+
+        // Eager load followUps relationship for performance
+        $query->with(['followUps' => function($q) {
+            $q->where('follow_up_type', 'call')
+              ->orderBy('created_at', 'desc')
+              ->limit(1);
+        }]);
 
         // Paginate the results.
         $company = $query->paginate(7);

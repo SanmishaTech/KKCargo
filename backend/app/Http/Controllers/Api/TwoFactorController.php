@@ -202,7 +202,7 @@ class TwoFactorController extends Controller
             }
 
             // Create token after successful verification
-            $token = $user->createToken($user->name)->plainTextToken;
+            $token = $user->createToken($user->name, ['*'], now()->addMinutes(env('SESSION_LIFETIME', 120)))->plainTextToken;
 
             // Log login activity
             ActivityLogger::log('login', $user, 'User logged in with 2FA');

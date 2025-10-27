@@ -74,7 +74,7 @@ class UserController extends BaseController
                     }
                     
                     // OTP is valid, proceed with login
-                    $token = $user->createToken($user->name)->plainTextToken;
+                    $token = $user->createToken($user->name, ['*'], now()->addMinutes((int)env('SESSION_LIFETIME', 120)))->plainTextToken;
                     $staff = Staff::where('user_id', $user->id)->first();
                     // Log login activity
                     ActivityLogger::log('login', $user, 'User logged in with 2FA');
@@ -97,7 +97,7 @@ class UserController extends BaseController
             }
             
             // No 2FA, proceed with normal login
-            $token =  $user->createToken($user->name)->plainTextToken;
+            $token =  $user->createToken($user->name, ['*'], now()->addMinutes((int)env('SESSION_LIFETIME', 120)))->plainTextToken;
             $staff = Staff::where('user_id', $user->id)->first();
             // Log login activity
             ActivityLogger::log('login', $user, 'User logged in');

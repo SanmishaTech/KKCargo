@@ -90,6 +90,16 @@ export default function Dashboard({
   companyType,
   onCityFilter,
   city,
+  onStatusFilter,
+  status,
+  onCreatedAtFilter,
+  createdAt,
+  onDayFilter,
+  day,
+  onMonthFilter,
+  month,
+  onYearFilter,
+  year,
 }: {
   breadcrumbs?: any[];
   searchPlaceholder?: string;
@@ -122,6 +132,16 @@ export default function Dashboard({
   companyType?: string;
   onCityFilter?: (city: string) => void;
   city?: string;
+  onStatusFilter?: (status: string) => void;
+  status?: string;
+  onCreatedAtFilter?: (createdAt: string) => void;
+  createdAt?: string;
+  onDayFilter?: (day: string) => void;
+  day?: string;
+  onMonthFilter?: (month: string) => void;
+  month?: string;
+  onYearFilter?: (year: string) => void;
+  year?: string;
 }) {
   const navigate = useNavigate();
   const [toggleedit, setToggleedit] = useState(false);
@@ -483,10 +503,22 @@ export default function Dashboard({
                   onCompanyTypeChange={onCompanyTypeFilter}
                   city={city}
                   onCityChange={onCityFilter}
+                  status={status}
+                  onStatusChange={onStatusFilter}
+                  createdAt={createdAt}
+                  onCreatedAtChange={onCreatedAtFilter}
+                  day={day}
+                  onDayChange={onDayFilter}
+                  month={month}
+                  onMonthChange={onMonthFilter}
+                  year={year}
+                  onYearChange={onYearFilter}
                   showCompanyTypeFilter={true}
                   showCityFilter={true}
-                  placeholder="Filter by month/year, type & city"
-                  className="w-64"
+                  showStatusFilter={true}
+                  showCreatedAtFilter={true}
+                  placeholder="Filter by day/month/year, type, city, status"
+                  className="w-80"
                 />
                 
                 {/* Import Companies Dialog */}

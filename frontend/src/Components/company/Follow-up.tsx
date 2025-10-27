@@ -275,9 +275,11 @@ function FollowUpHistory({ companyId }: { companyId?: number }) {
 
 export default function Followup({ companyId }: { companyId?: number }) {
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("add");
+
   return (
     <div className="p-4 md:p-6">
-      <Tabs defaultValue="add">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <div className="flex justify-center">
           <TabsList className="mb-4 grid w-full max-w-md grid-cols-2">
             <TabsTrigger value="add">Add Follow up</TabsTrigger>
@@ -285,7 +287,11 @@ export default function Followup({ companyId }: { companyId?: number }) {
           </TabsList>
         </div>
         <TabsContent value="add">
-          <FollowUpForm companyId={companyId} onCancel={() => navigate({ to: "/company" })} />
+          <FollowUpForm 
+            companyId={companyId} 
+            onSuccess={() => setActiveTab("history")}
+            onCancel={() => navigate({ to: "/company" })} 
+          />
         </TabsContent>
         <TabsContent value="history">
           <FollowUpHistory companyId={companyId} />

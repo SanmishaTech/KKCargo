@@ -14,6 +14,14 @@ class CompanyResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        return parent::toArray($request);
+        // Get the last follow-up where follow_up_type is 'call'
+        $lastCallFollowUp = $this->followUps()
+            ->where('follow_up_type', 'call')
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        return array_merge(parent::toArray($request), [
+            'last_calling_date' => $lastCallFollowUp ? $lastCallFollowUp->next_follow_up_date : null,
+        ]);
     }
 }

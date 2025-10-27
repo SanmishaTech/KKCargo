@@ -38,16 +38,6 @@ export const searchconfig: Record<string, MenuItem[]> = {
   
   admin: [
     {
-      title: "Dashboard",
-      url: "/dashboards",
-      icon: Home,
-    },
-    {
-      title: "Today Follow-up",
-      url: "/today-followup",
-      icon: Calendar,
-    },
-    {
       title: "Staff",
       url: "/staff",
       icon: Users,
@@ -56,6 +46,11 @@ export const searchconfig: Record<string, MenuItem[]> = {
       title: "Company",
       url: "/company",
       icon: Building,
+    },
+    {
+      title: "Today Follow-up",
+      url: "/today-followup",
+      icon: Calendar,
     },
     {
       title: "Roles & Permissions",
@@ -86,16 +81,6 @@ export const searchconfig: Record<string, MenuItem[]> = {
   ],
   staff: [
     {
-      title: "Dashboard",
-      url: "/dashboards",
-      icon: Home,
-    },
-    {
-      title: "Today Follow-up",
-      url: "/today-followup",
-      icon: Calendar,
-    },
-    {
       title: "Staff",
       url: "/staff",
       icon: Users,
@@ -104,6 +89,11 @@ export const searchconfig: Record<string, MenuItem[]> = {
       title: "Company",
       url: "/company",
       icon: Building,
+    },
+    {
+      title: "Today Follow-up",
+      url: "/today-followup",
+      icon: Calendar,
     },
     {
       title: "Settings",

@@ -176,7 +176,7 @@ const Login = () => {
       // Set flag to show today's follow-up popup
       sessionStorage.setItem("showFollowupPopup", "true");
       
-      navigate({ to: "/dashboards" });
+      navigate({ to: "/company" });
       toast.success("Successfully Logged In");
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || "Failed to log in. Check your credentials.";

@@ -21,7 +21,10 @@ const PopoverContent = React.forwardRef<
         className
       )}
       {...props}
-    />
+    >
+      <PopoverPrimitive.Arrow className="fill-popover" width={20} height={10} />
+      {props.children}
+    </PopoverPrimitive.Content>
   </PopoverPrimitive.Portal>
 ))
 PopoverContent.displayName = PopoverPrimitive.Content.displayName

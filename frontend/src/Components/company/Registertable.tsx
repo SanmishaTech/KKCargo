@@ -5,6 +5,7 @@ import userAvatar from "@/images/Profile.jpg";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate, useSearch } from "@tanstack/react-router";
+import { CalendarClock } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -12,6 +13,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import axios from "axios";
 import { toast } from "sonner";
 import {
@@ -66,7 +82,9 @@ export default function Dashboardholiday() {
   });
   const routeSearch: any = useSearch({ from: "/company/" });
   const [searchQuery, setSearchQuery] = useState(routeSearch?.search ?? "");
-  const [filter, setFilter] = useState<{dateFilter?: string, companyType?: string, city?: string}>({});
+  const [filter, setFilter] = useState<{dateFilter?: string, companyType?: string, city?: string, status?: string, createdAt?: string, day?: string, month?: string, year?: string}>({});
+  const [showTodayFollowupPopup, setShowTodayFollowupPopup] = useState(false);
+  const [todayFollowups, setTodayFollowups] = useState<any[]>([]);
   const [statusOptions] = useState([
     { value: "interested", label: "Interested" },
     { value: "not_interested", label: "Not interested" },
@@ -116,9 +134,14 @@ export default function Dashboardholiday() {
     if (filter.dateFilter) params.set('date_filter', filter.dateFilter)
     if (filter.companyType) params.set('company_type', filter.companyType)
     if (filter.city) params.set('city', filter.city)
+    if (filter.status) params.set('status', filter.status)
+    if (filter.createdAt) params.set('created_at', filter.createdAt)
+    if (filter.day) params.set('day', filter.day)
+    if (filter.month) params.set('month', filter.month)
+    if (filter.year) params.set('year', filter.year)
     params.set('page', paginationState.currentPage.toString())
     return `/api/companies?${params.toString()}`
-  }, [searchQuery, filter.dateFilter, filter.companyType, filter.city, paginationState.currentPage]);
+  }, [searchQuery, filter.dateFilter, filter.companyType, filter.city, filter.status, filter.createdAt, filter.day, filter.month, filter.year, paginationState.currentPage]);
 
   // Memoized params object to prevent recreation on every render
   const queryParams = useMemo(() => ({
@@ -156,6 +179,38 @@ export default function Dashboardholiday() {
     }
   }, [routeSearch?.search]);
 
+  // Fetch today's follow-ups and show popup only after login
+  useEffect(() => {
+    const shouldShowPopup = sessionStorage.getItem("showFollowupPopup");
+    
+    if (shouldShowPopup === "true") {
+      const fetchTodayFollowups = async () => {
+        try {
+          const today = new Date().toISOString().split("T")[0];
+          const response = await axios.get(`/api/dashboard?next_follow_up_date=${today}`, {
+            headers: {
+              Authorization: "Bearer " + localStorage.getItem("token"),
+            },
+          });
+
+          if (response.data?.status && response.data?.data?.follow_ups?.data) {
+            const followups = response.data.data.follow_ups.data;
+            if (followups.length > 0) {
+              setTodayFollowups(followups);
+              setShowTodayFollowupPopup(true);
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching today's follow-ups:", error);
+        }
+      };
+
+      fetchTodayFollowups();
+      // Clear the flag after showing popup
+      sessionStorage.removeItem("showFollowupPopup");
+    }
+  }, []);
+
   // Wrapper function – we now rely on the shared GET hook for actual fetching
   const fetchData = (query: string = "", page: number = 1) => {
     setSearchQuery(query);
@@ -183,6 +238,31 @@ export default function Dashboardholiday() {
 
   const handleCityFilter = (city: string) => {
     setFilter((prev) => ({ ...prev, city: city }));
+    setPaginationState((prev) => ({ ...prev, currentPage: 1 }));
+  };
+
+  const handleStatusFilter = (status: string) => {
+    setFilter((prev) => ({ ...prev, status: status }));
+    setPaginationState((prev) => ({ ...prev, currentPage: 1 }));
+  };
+
+  const handleCreatedAtFilter = (createdAt: string) => {
+    setFilter((prev) => ({ ...prev, createdAt: createdAt }));
+    setPaginationState((prev) => ({ ...prev, currentPage: 1 }));
+  };
+
+  const handleDayFilter = (day: string) => {
+    setFilter((prev) => ({ ...prev, day: day }));
+    setPaginationState((prev) => ({ ...prev, currentPage: 1 }));
+  };
+
+  const handleMonthFilter = (month: string) => {
+    setFilter((prev) => ({ ...prev, month: month }));
+    setPaginationState((prev) => ({ ...prev, currentPage: 1 }));
+  };
+
+  const handleYearFilter = (year: string) => {
+    setFilter((prev) => ({ ...prev, year: year }));
     setPaginationState((prev) => ({ ...prev, currentPage: 1 }));
   };
 
@@ -260,6 +340,7 @@ export default function Dashboardholiday() {
           { label: "Remark", key: "remark" },
           { label: "Send Brochure", key: "send_brochure" },
           { label: "Status", key: "nine" },
+          { label: "Last Calling", key: "last_calling" },
           { label: "Action", key: "action" },
         ],
         actions: [
@@ -377,6 +458,19 @@ export default function Dashboardholiday() {
       return `${date.getDate()} ${month} ${year}`;
     };
 
+    const formatDateDDMMYYYY = (dateString: string | undefined) => {
+      if (!dateString || dateString === "-") return "-";
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return "-";
+      }
+      // Format as DD/MM/YYYY
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}/${month}/${year}`;
+    };
+
     const mobileNumber = item?.contact_mobile;
 
     return {
@@ -416,14 +510,93 @@ export default function Dashboardholiday() {
           </SelectContent>
         </Select>
       ),
+      last_calling: formatDateDDMMYYYY(item?.last_calling_date),
       delete:
         item?.role?.toLowerCase() !== "admin" ? "/companies/" + item?.id : null,
     };
   });
 
   return (
-    <div className="p-4">
-      <Dashboard
+    <>
+      {/* Today's Follow-up Popup */}
+      <Dialog open={showTodayFollowupPopup} onOpenChange={setShowTodayFollowupPopup}>
+        <DialogContent className="max-w-4xl bg-white">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-2xl">
+              <CalendarClock className="h-6 w-6" />
+              Today's Follow-ups ({todayFollowups.length})
+            </DialogTitle>
+            <DialogDescription>
+              {new Date().toLocaleDateString("en-US", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Company Name</TableHead>
+                  <TableHead>Remark</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {todayFollowups.slice(0, 7).map((followUp) => (
+                  <TableRow key={followUp.id}>
+                    <TableCell className="font-medium">{followUp.company_name}</TableCell>
+                    <TableCell>{followUp.remarks}</TableCell>
+                    <TableCell>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        {followUp.status}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setShowTodayFollowupPopup(false);
+                          setSearchQuery(followUp.company_name || "");
+                          setPaginationState((prev) => ({ ...prev, currentPage: 1 }));
+                        }}
+                      >
+                        View Details
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            {todayFollowups.length > 7 && (
+              <div className="mt-3 text-center">
+                <Button
+                  variant="link"
+                  onClick={() => {
+                    setShowTodayFollowupPopup(false);
+                    navigate({ to: "/today-followup" });
+                  }}
+                  className="text-blue-600 hover:text-blue-700"
+                >
+                  See more ({todayFollowups.length - 7} more follow-ups)
+                </Button>
+              </div>
+            )}
+          </div>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button onClick={() => setShowTodayFollowupPopup(false)}>
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <div className="p-4">
+        <Dashboard
         breadcrumbs={config.breadcrumbs}
         searchPlaceholder={config.searchPlaceholder}
         userAvatar={userAvatar}
@@ -437,9 +610,19 @@ export default function Dashboardholiday() {
         onDateFilter={handleDateFilter}
         onCompanyTypeFilter={handleCompanyTypeFilter}
         onCityFilter={handleCityFilter}
+        onStatusFilter={handleStatusFilter}
+        onCreatedAtFilter={handleCreatedAtFilter}
+        onDayFilter={handleDayFilter}
+        onMonthFilter={handleMonthFilter}
+        onYearFilter={handleYearFilter}
         dateFilter={filter.dateFilter}
         companyType={filter.companyType}
         city={filter.city}
+        status={filter.status}
+        createdAt={filter.createdAt}
+        day={filter.day}
+        month={filter.month}
+        year={filter.year}
         currentPage={paginationState.currentPage}
         totalPages={paginationState.totalPages}
         handleNextPage={handleNextPage}
@@ -449,6 +632,7 @@ export default function Dashboardholiday() {
         typeofschema={typeofschema}
         fetchData={fetchData}
       />
-    </div>
+      </div>
+    </>
   );
 }

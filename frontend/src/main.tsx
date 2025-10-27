@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import ReactDOM from "react-dom/client";
 import store from "./Components/Redux/sessionSlice";
 import { Provider } from "react-redux";
+import "./lib/axios-config"; // Configure axios interceptors
 
 import { RouterProvider, createRouter } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
