@@ -47,6 +47,7 @@ interface Company {
   contact_mobile: string;
   role: string;
   status: string;
+  grade?: string | null;
   type_of_company?: string;
   services?: { serviceId?: { price?: number } }[];
   paymentMode?: { paidAmount?: number };
@@ -91,6 +92,13 @@ export default function Dashboardholiday() {
     { value: "not_answering", label: "Not answering the call" },
     { value: "wrong_number", label: "Wrong number" },
     { value: "busy_on_call", label: "Busy on another call" },
+  ]);
+
+  const [gradeOptions] = useState([
+    { value: "1", label: "1" },
+    { value: "2", label: "2" },
+    { value: "3", label: "3" },
+    { value: "4", label: "4" },
   ]);
 
   // Memoized callback functions to prevent infinite re-renders
@@ -145,7 +153,12 @@ export default function Dashboardholiday() {
 
   // Memoized params object to prevent recreation on every render
   const queryParams = useMemo(() => ({
-    queryKey: ["companies", searchQuery, filter, paginationState.currentPage],
+    queryKey: [
+      "companies",
+      searchQuery,
+      JSON.stringify(filter),
+      String(paginationState.currentPage),
+    ],
     onSuccess,
     onError,
   }), [searchQuery, filter, paginationState.currentPage, onSuccess, onError]);
@@ -297,6 +310,35 @@ export default function Dashboardholiday() {
     }
   };
 
+  // Handle grade update for companies
+  const handleGradeUpdate = async (companyId: string, newGrade: string) => {
+    try {
+      const response = await axios.put(
+        `/api/companies/${companyId}/grade`,
+        { grade: newGrade },
+        {
+          headers: {
+            Authorization: "Bearer " + localStorage.getItem("token"),
+          },
+        }
+      );
+
+      if (response.data.status) {
+        setData((prev) =>
+          prev.map((company) =>
+            company.id === companyId ? { ...company, grade: newGrade } : company
+          )
+        );
+        toast.success("Grade updated successfully");
+      } else {
+        toast.error("Failed to update grade");
+      }
+    } catch (error: any) {
+      console.error("Error updating grade:", error);
+      toast.error(error.response?.data?.message || "Failed to update grade");
+    }
+  };
+
   const handleNextPage = () => {
     if (paginationState.currentPage < paginationState.totalPages) {
       handlePageChange(paginationState.currentPage + 1);
@@ -340,6 +382,7 @@ export default function Dashboardholiday() {
           { label: "Remark", key: "remark" },
           { label: "Send Brochure", key: "send_brochure" },
           { label: "Status", key: "nine" },
+          { label: "Grade", key: "grade" },
           { label: "Last Calling", key: "last_calling" },
           { label: "Action", key: "action" },
         ],
@@ -503,6 +546,23 @@ export default function Dashboardholiday() {
           </SelectTrigger>
           <SelectContent>
             {statusOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      ),
+      grade: (
+        <Select
+          value={item?.grade ? String(item.grade) : undefined}
+          onValueChange={(value) => handleGradeUpdate(item?.id, value)}
+        >
+          <SelectTrigger className="w-[90px] h-8">
+            <SelectValue placeholder="Select grade" />
+          </SelectTrigger>
+          <SelectContent>
+            {gradeOptions.map((option) => (
               <SelectItem key={option.value} value={option.value}>
                 {option.label}
               </SelectItem>

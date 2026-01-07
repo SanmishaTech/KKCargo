@@ -59,15 +59,30 @@
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 20px;
+            table-layout: fixed;
         }
         table th, table td {
             border: 1px solid #dee2e6;
             padding: 8px;
             text-align: left;
+            vertical-align: top;
+            word-break: break-word;
+            overflow-wrap: break-word;
         }
         table th {
             background-color: #f8f9fa;
             font-weight: bold;
+            color: #495057;
+            font-size: 10px;
+        }
+        .srno {
+            text-align: center;
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+        .remark-row td {
+            background-color: #ffffff;
+            font-size: 10px;
             color: #495057;
         }
         table tr:nth-child(even) {
@@ -93,71 +108,8 @@
     <div class="header">
         <h1>Daily Activity Report</h1>
         <p><strong>Date:</strong> {{ $summary['date'] }}</p>
-        <p><strong>Generated:</strong> {{ now()->format('Y-m-d H:i:s') }}</p>
+        <p><strong>Generated:</strong> {{ now()->timezone(config('app.timezone'))->format('Y-m-d h:i A') }}</p>
         <p><strong>Company:</strong> KK Cargo Movers</p>
-    </div>
-
-    <div class="summary-box">
-        <div class="summary-item">
-            <span class="summary-label">Total Activities:</span>
-            <span class="summary-value">{{ $summary['total'] }}</span>
-        </div>
-        <div class="summary-item">
-            <span class="summary-label">Unique Actions:</span>
-            <span class="summary-value">{{ $summary['by_action']->count() }}</span>
-        </div>
-        <div class="summary-item">
-            <span class="summary-label">Active Users:</span>
-            <span class="summary-value">{{ $summary['by_user']->count() }}</span>
-        </div>
-    </div>
-
-    <div class="section">
-        <h2>Activity Summary by Action</h2>
-        @if($summary['by_action']->count() > 0)
-            <table>
-                <thead>
-                    <tr>
-                        <th>Action</th>
-                        <th style="text-align: right;">Count</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($summary['by_action'] as $action => $count)
-                        <tr>
-                            <td>{{ $action }}</td>
-                            <td style="text-align: right;">{{ $count }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        @else
-            <div class="no-data">No actions recorded for this date.</div>
-        @endif
-    </div>
-
-    <div class="section">
-        <h2>Activity Summary by User</h2>
-        @if($summary['by_user']->count() > 0)
-            <table>
-                <thead>
-                    <tr>
-                        <th>User</th>
-                        <th style="text-align: right;">Count</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($summary['by_user'] as $userId => $userData)
-                        <tr>
-                            <td>{{ $userData['name'] }}</td>
-                            <td style="text-align: right;">{{ $userData['count'] }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        @else
-            <div class="no-data">No user activity recorded for this date.</div>
-        @endif
     </div>
 
     <div class="section">
@@ -166,21 +118,32 @@
             <table>
                 <thead>
                     <tr>
-                        <th style="width: 15%;">Time</th>
-                        <th style="width: 20%;">User</th>
-                        <th style="width: 25%;">Action</th>
-                        <th style="width: 25%;">Description</th>
-                        <th style="width: 15%;">IP Address</th>
+                        <th class="srno" style="width: 6%;">Sr No</th>
+                        <th style="width: 10%;">Created at</th>
+                        <th style="width: 20%;">Company Name</th>
+                        <th style="width: 12%;">Company Type</th>
+                        <th style="width: 10%;">Time</th>
+                        <th style="width: 14%;">User</th>
+                        <th style="width: 16%;">Action</th>
+                        <th style="width: 14%;">Status</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($summary['latest'] as $log)
+                    @foreach($summary['latest'] as $i => $log)
                         <tr>
-                            <td style="font-size: 10px;">{{ $log->created_at->format('H:i:s') }}</td>
-                            <td>{{ optional($log->user)->name ?: 'System' }}</td>
+                            <td class="srno" rowspan="2" style="font-size: 10px;">{{ $i + 1 }}</td>
+                            <td style="font-size: 10px; white-space: nowrap;">{{ $log->created_at->timezone(config('app.timezone'))->format('Y-m-d') }}</td>
+                            <td style="font-size: 10px;">{{ data_get($log->properties, 'company_name', '-') }}</td>
+                            <td style="font-size: 10px;">{{ data_get($log->properties, 'company_type') ?? data_get($log->properties, 'type_of_company') ?? '-' }}</td>
+                            <td style="font-size: 10px; white-space: nowrap;">{{ $log->created_at->timezone(config('app.timezone'))->format('h:i a') }}</td>
+                            <td style="font-size: 10px;">{{ optional($log->user)->name ?: 'System' }}</td>
                             <td><span style="background-color: #e3f2fd; padding: 2px 8px; border-radius: 12px; font-size: 10px; color: #1565c0;">{{ $log->action }}</span></td>
-                            <td>{{ $log->description ?: '-' }}</td>
-                            <td style="font-family: monospace; font-size: 10px;">{{ $log->ip_address ?: '-' }}</td>
+                            <td style="font-size: 10px;">{{ data_get($log->properties, 'status') ?? data_get($log->properties, 'new_status') ?? '-' }}</td>
+                        </tr>
+                        <tr class="remark-row">
+                            <td colspan="7" style="padding-top: 6px; padding-bottom: 6px;">
+                                <strong>Remark:</strong> {{ data_get($log->properties, 'remarks', '-') }}
+                            </td>
                         </tr>
                     @endforeach
                 </tbody>
@@ -188,11 +151,6 @@
         @else
             <div class="no-data">No recent activities found for this date.</div>
         @endif
-    </div>
-
-    <div class="footer">
-        <p>This is an automated report generated by KK Cargo Movers Activity Monitoring System.</p>
-        <p>Report generated at {{ now()->format('Y-m-d H:i:s') }}</p>
     </div>
 </body>
 </html>

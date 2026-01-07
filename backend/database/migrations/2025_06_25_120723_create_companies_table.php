@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('date')->nullable();
             $table->string('company_name')->nullable();
             $table->string('status')->nullable();
+            $table->string('grade')->nullable();
             $table->string('street_address')->nullable();
             $table->string('area')->nullable();
             $table->string('city')->nullable();

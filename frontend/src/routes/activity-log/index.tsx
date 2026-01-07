@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useGetData } from "../../Components/HTTP/GET";
 import axios from "axios";
 import { toast } from "sonner";
@@ -24,7 +24,16 @@ export const Route = createFileRoute("/activity-log/")({
 function formatDate(dt: string) {
   try {
     const d = new Date(dt);
-    return d.toLocaleString();
+    return d.toLocaleDateString();
+  } catch {
+    return dt;
+  }
+}
+
+function formatTime(dt: string) {
+  try {
+    const d = new Date(dt);
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   } catch {
     return dt;
   }
@@ -48,7 +57,14 @@ function ActivityLogPage() {
 
   const queryParams = useMemo(
     () => ({
-      queryKey: ["activity-logs", page, search, action, dateFrom, dateTo],
+      queryKey: [
+        "activity-logs",
+        String(page),
+        search,
+        action,
+        dateFrom,
+        dateTo,
+      ],
       refetchOnWindowFocus: false,
     }),
     [page, search, action, dateFrom, dateTo]
@@ -188,14 +204,14 @@ function ActivityLogPage() {
             <table className="min-w-full divide-y divide-gray-200" style={{overflow: 'visible'}}>
           <thead className="bg-gray-50">
             <tr>
-              <th className="text-left p-4 font-semibold text-gray-700 border-b" style={{width: '150px'}}>Time</th>
-              <th className="text-left p-4 font-semibold text-gray-700 border-b" style={{width: '100px'}}>User</th>
-              <th className="text-left p-4 font-semibold text-gray-700 border-b" style={{width: '150px'}}>Action</th>
-              <th className="text-left p-4 font-semibold text-gray-700 border-b" style={{width: '200px'}}>Description</th>
+              <th className="text-left p-4 font-semibold text-gray-700 border-b" style={{width: '130px'}}>Created at</th>
               <th className="text-left p-4 font-semibold text-gray-700 border-b" style={{width: '180px'}}>Company Name</th>
-              <th className="text-left p-4 font-semibold text-gray-700 border-b" style={{width: '250px'}}>Remarks</th>
+              <th className="text-left p-4 font-semibold text-gray-700 border-b" style={{width: '140px'}}>Company Type</th>
+              <th className="text-left p-4 font-semibold text-gray-700 border-b" style={{width: '110px'}}>Time</th>
+              <th className="text-left p-4 font-semibold text-gray-700 border-b" style={{width: '120px'}}>User</th>
+              <th className="text-left p-4 font-semibold text-gray-700 border-b" style={{width: '150px'}}>Action</th>
               <th className="text-left p-4 font-semibold text-gray-700 border-b" style={{width: '120px'}}>Status</th>
-              <th className="text-left p-4 font-semibold text-gray-700 border-b" style={{width: '130px'}}>IP Address</th>
+              <th className="text-left p-4 font-semibold text-gray-700 border-b" style={{width: '250px'}}>Remark</th>
             </tr>
           </thead>
           <tbody style={{overflow: 'visible'}}>
@@ -217,21 +233,13 @@ function ActivityLogPage() {
             {logs.map((log, index) => {
               const companyName = log.properties?.company_name || '-';
               const companyNameTruncated = log.properties?.company_name && log.properties.company_name.length > 30 ? log.properties.company_name.substring(0, 30) + '...' : companyName;
+              const companyType = log.properties?.company_type || '-';
               const remarks = log.properties?.remarks ? (log.properties.remarks.length > 50 ? log.properties.remarks.substring(0, 50) + '...' : log.properties.remarks) : '-';
               const status = log.properties?.status || log.properties?.new_status || '-';
               
               return (
                 <tr key={log.id} className={`border-b hover:bg-gray-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`} style={{overflow: 'visible'}}>
-                  <td className="p-4 whitespace-nowrap text-sm text-gray-900" style={{width: '150px'}}>{formatDate(log.created_at)}</td>
-                  <td className="p-4 text-sm" style={{width: '100px'}}>
-                    <span className="font-medium text-gray-900">{log.user_name || 'System'}</span>
-                  </td>
-                  <td className="p-4 text-sm" style={{width: '150px'}}>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      {log.action}
-                    </span>
-                  </td>
-                  <td className="p-4 text-sm text-gray-600" style={{width: '200px', wordBreak: 'break-word'}}>{log.description || '-'}</td>
+                  <td className="p-4 whitespace-nowrap text-sm text-gray-900" style={{width: '130px'}}>{formatDate(log.created_at)}</td>
                   <td className="p-4 text-sm text-gray-900" style={{width: '180px'}}>
                     {companyName !== '-' ? (
                       <div className="relative group">
@@ -255,6 +263,30 @@ function ActivityLogPage() {
                           </div>
                         )}
                       </div>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
+                  </td>
+                  <td className="p-4 text-sm text-gray-600" style={{width: '140px', wordBreak: 'break-word'}}>{companyType}</td>
+                  <td className="p-4 whitespace-nowrap text-sm text-gray-900" style={{width: '110px'}}>{formatTime(log.created_at)}</td>
+                  <td className="p-4 text-sm" style={{width: '120px'}}>
+                    <span className="font-medium text-gray-900">{log.user_name || 'System'}</span>
+                  </td>
+                  <td className="p-4 text-sm" style={{width: '150px'}}>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      {log.action}
+                    </span>
+                  </td>
+                  <td className="p-4 text-sm" style={{width: '120px'}}>
+                    {status !== '-' ? (
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                        status === 'interested' ? 'bg-green-100 text-green-800' :
+                        status === 'waiting' ? 'bg-yellow-100 text-yellow-800' :
+                        status === 'not_interested' ? 'bg-red-100 text-red-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {status.replace(/_/g, ' ')}
+                      </span>
                     ) : (
                       <span className="text-gray-400">-</span>
                     )}
@@ -286,21 +318,6 @@ function ActivityLogPage() {
                       <span className="text-gray-400">-</span>
                     )}
                   </td>
-                  <td className="p-4 text-sm" style={{width: '120px'}}>
-                    {status !== '-' ? (
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                        status === 'interested' ? 'bg-green-100 text-green-800' :
-                        status === 'waiting' ? 'bg-yellow-100 text-yellow-800' :
-                        status === 'not_interested' ? 'bg-red-100 text-red-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {status.replace(/_/g, ' ')}
-                      </span>
-                    ) : (
-                      <span className="text-gray-400">-</span>
-                    )}
-                  </td>
-                  <td className="p-4 text-sm text-gray-500 font-mono" style={{width: '130px'}}>{log.ip_address || '-'}</td>
                 </tr>
               );
             })}

@@ -654,4 +654,40 @@ EOT;
         }
     }
 
+    /**
+     * Update company grade.
+     */
+    public function updateGrade(Request $request, string $id): JsonResponse
+    {
+        try {
+            $company = Company::find($id);
+
+            if (!$company) {
+                return $this->sendError("Company not found", ['error' => 'Company not found']);
+            }
+
+            $request->validate([
+                'grade' => 'required|string|in:1,2,3,4'
+            ]);
+
+            $oldGrade = $company->grade;
+            $company->grade = $request->input('grade');
+            $company->save();
+
+            ActivityLogger::log('company.grade_updated', $company, 'Company grade updated', [
+                'company_name' => $company->company_name,
+                'old_grade' => $oldGrade,
+                'new_grade' => $request->input('grade')
+            ]);
+
+            return $this->sendResponse(
+                ['grade' => $request->input('grade')],
+                "Company grade updated successfully"
+            );
+
+        } catch (\Exception $e) {
+            return $this->sendError('Error updating company grade', ['error' => $e->getMessage()], 500);
+        }
+    }
+
 }

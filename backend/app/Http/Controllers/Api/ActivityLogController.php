@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Api\BaseController;
 use App\Models\ActivityLog;
+use App\Models\Company;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -45,8 +46,56 @@ class ActivityLogController extends BaseController
 
         $logs = ActivityLog::with('user')
             ->whereBetween('created_at', [$start, $end])
-            ->orderBy('created_at', 'asc')
+            ->orderBy('created_at', 'desc')
             ->get();
+
+        $latest = $logs->take(20)->values();
+
+        $companyIds = $latest
+            ->map(function ($log) {
+                $properties = is_array($log->properties) ? $log->properties : [];
+                $companyId = $properties['company_id'] ?? null;
+
+                if (!$companyId && $log->subject_type === Company::class && $log->subject_id) {
+                    $companyId = $log->subject_id;
+                }
+
+                return $companyId;
+            })
+            ->filter()
+            ->unique()
+            ->values();
+
+        $companiesById = $companyIds->isNotEmpty()
+            ? Company::whereIn('id', $companyIds)->get()->keyBy('id')
+            : collect();
+
+        $latest = $latest->map(function ($log) use ($companiesById) {
+            $properties = is_array($log->properties) ? $log->properties : [];
+            $companyId = $properties['company_id'] ?? null;
+
+            if (!$companyId && $log->subject_type === Company::class && $log->subject_id) {
+                $companyId = $log->subject_id;
+                $properties['company_id'] = $companyId;
+            }
+
+            $company = $companyId ? $companiesById->get($companyId) : null;
+
+            if ($company) {
+                if (empty($properties['company_name'])) {
+                    $properties['company_name'] = $company->company_name;
+                }
+                if (empty($properties['company_type']) && empty($properties['type_of_company'])) {
+                    $properties['company_type'] = $company->type_of_company;
+                }
+                if (empty($properties['status']) && empty($properties['new_status'])) {
+                    $properties['status'] = $company->status;
+                }
+            }
+
+            $log->properties = $properties;
+            return $log;
+        });
 
         $summary = [
             'date' => $reportDate->toDateString(),
@@ -56,7 +105,7 @@ class ActivityLogController extends BaseController
                 $name = optional(optional($items->first())->user)->name ?: 'System';
                 return ['name' => $name, 'count' => $items->count()];
             })->sortByDesc('count'),
-            'latest' => $logs->take(20),
+            'latest' => $latest,
         ];
 
         // Get recipients from config (works with config caching) and sanitize
@@ -76,7 +125,7 @@ class ActivityLogController extends BaseController
             $fileName = 'daily-activity-report-' . $summary['date'] . '.pdf';
 
             // Send email with PDF attachment
-            Mail::send('emails.activity_report_simple', ['summary' => $summary], function ($message) use ($recipients, $summary, $pdfContent, $fileName) {
+            Mail::send('emails.activity_report', ['summary' => $summary], function ($message) use ($recipients, $summary, $pdfContent, $fileName) {
                 $message->to($recipients)
                     ->subject('Daily Activity Report - ' . $summary['date'])
                     ->attachData($pdfContent, $fileName, [

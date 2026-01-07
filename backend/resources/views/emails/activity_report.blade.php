@@ -57,24 +57,30 @@
     <table width="100%" cellpadding="6" cellspacing="0" style="border-collapse: collapse;">
       <thead>
         <tr>
+          <th align="left" style="border-bottom:1px solid #ddd;">Created at</th>
+          <th align="left" style="border-bottom:1px solid #ddd;">Company Name</th>
+          <th align="left" style="border-bottom:1px solid #ddd;">Company Type</th>
           <th align="left" style="border-bottom:1px solid #ddd;">Time</th>
           <th align="left" style="border-bottom:1px solid #ddd;">User</th>
           <th align="left" style="border-bottom:1px solid #ddd;">Action</th>
-          <th align="left" style="border-bottom:1px solid #ddd;">Subject</th>
-          <th align="left" style="border-bottom:1px solid #ddd;">Description</th>
+          <th align="left" style="border-bottom:1px solid #ddd;">Status</th>
+          <th align="left" style="border-bottom:1px solid #ddd;">Remark</th>
         </tr>
       </thead>
       <tbody>
         @forelse($summary['latest'] as $log)
           <tr>
-            <td style="border-bottom:1px solid #f0f0f0; white-space:nowrap;">{{ $log->created_at->format('Y-m-d H:i') }}</td>
+            <td style="border-bottom:1px solid #f0f0f0; white-space:nowrap;">{{ $log->created_at->format('Y-m-d') }}</td>
+            <td style="border-bottom:1px solid #f0f0f0;">{{ data_get($log->properties, 'company_name', '-') }}</td>
+            <td style="border-bottom:1px solid #f0f0f0;">{{ data_get($log->properties, 'company_type', '-') }}</td>
+            <td style="border-bottom:1px solid #f0f0f0; white-space:nowrap;">{{ $log->created_at->format('H:i') }}</td>
             <td style="border-bottom:1px solid #f0f0f0;">{{ optional($log->user)->name ?: 'System' }}</td>
             <td style="border-bottom:1px solid #f0f0f0;">{{ $log->action }}</td>
-            <td style="border-bottom:1px solid #f0f0f0;">{{ $log->subject_type }} @if($log->subject_id)#{{ $log->subject_id }}@endif</td>
-            <td style="border-bottom:1px solid #f0f0f0;">{{ $log->description }}</td>
+            <td style="border-bottom:1px solid #f0f0f0;">{{ data_get($log->properties, 'status') ?? data_get($log->properties, 'new_status') ?? '-' }}</td>
+            <td style="border-bottom:1px solid #f0f0f0;">{{ data_get($log->properties, 'remarks', '-') }}</td>
           </tr>
         @empty
-          <tr><td colspan="5" style="color:#777;">No recent activities</td></tr>
+          <tr><td colspan="8" style="color:#777;">No recent activities</td></tr>
         @endforelse
       </tbody>
     </table>
