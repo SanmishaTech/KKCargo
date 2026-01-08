@@ -108,7 +108,7 @@
     <div class="header">
         <h1>Daily Activity Report</h1>
         <p><strong>Date:</strong> {{ $summary['date'] }}</p>
-        <p><strong>Generated:</strong> {{ now()->timezone(config('app.timezone'))->format('Y-m-d h:i A') }}</p>
+        <p><strong>Generated:</strong> {{ now()->timezone('Asia/Kolkata')->format('Y-m-d h:i A') }}</p>
         <p><strong>Company:</strong> KK Cargo Movers</p>
     </div>
 
@@ -132,10 +132,10 @@
                     @foreach($summary['latest'] as $i => $log)
                         <tr>
                             <td class="srno" rowspan="2" style="font-size: 10px;">{{ $i + 1 }}</td>
-                            <td style="font-size: 10px; white-space: nowrap;">{{ $log->created_at->timezone(config('app.timezone'))->format('Y-m-d') }}</td>
+                            <td style="font-size: 10px; white-space: nowrap;">{{ ($log->company_created_at ?? $log->created_at)?->timezone('Asia/Kolkata')->format('Y-m-d') }}</td>
                             <td style="font-size: 10px;">{{ data_get($log->properties, 'company_name', '-') }}</td>
                             <td style="font-size: 10px;">{{ data_get($log->properties, 'company_type') ?? data_get($log->properties, 'type_of_company') ?? '-' }}</td>
-                            <td style="font-size: 10px; white-space: nowrap;">{{ $log->created_at->timezone(config('app.timezone'))->format('h:i a') }}</td>
+                            <td style="font-size: 10px; white-space: nowrap;">{{ $log->created_at->timezone('Asia/Kolkata')->format('h:i a') }}</td>
                             <td style="font-size: 10px;">{{ optional($log->user)->name ?: 'System' }}</td>
                             <td><span style="background-color: #e3f2fd; padding: 2px 8px; border-radius: 12px; font-size: 10px; color: #1565c0;">{{ $log->action }}</span></td>
                             <td style="font-size: 10px;">{{ data_get($log->properties, 'status') ?? data_get($log->properties, 'new_status') ?? '-' }}</td>

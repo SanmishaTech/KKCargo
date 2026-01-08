@@ -70,10 +70,10 @@
       <tbody>
         @forelse($summary['latest'] as $log)
           <tr>
-            <td style="border-bottom:1px solid #f0f0f0; white-space:nowrap;">{{ $log->created_at->format('Y-m-d') }}</td>
+            <td style="border-bottom:1px solid #f0f0f0; white-space:nowrap;">{{ ($log->company_created_at ?? $log->created_at)?->timezone('Asia/Kolkata')->format('Y-m-d') }}</td>
             <td style="border-bottom:1px solid #f0f0f0;">{{ data_get($log->properties, 'company_name', '-') }}</td>
             <td style="border-bottom:1px solid #f0f0f0;">{{ data_get($log->properties, 'company_type', '-') }}</td>
-            <td style="border-bottom:1px solid #f0f0f0; white-space:nowrap;">{{ $log->created_at->format('H:i') }}</td>
+            <td style="border-bottom:1px solid #f0f0f0; white-space:nowrap;">{{ $log->created_at->timezone('Asia/Kolkata')->format('H:i') }}</td>
             <td style="border-bottom:1px solid #f0f0f0;">{{ optional($log->user)->name ?: 'System' }}</td>
             <td style="border-bottom:1px solid #f0f0f0;">{{ $log->action }}</td>
             <td style="border-bottom:1px solid #f0f0f0;">{{ data_get($log->properties, 'status') ?? data_get($log->properties, 'new_status') ?? '-' }}</td>

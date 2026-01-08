@@ -7,6 +7,8 @@ import { toast } from "sonner";
 interface LogItem {
   id: number;
   created_at: string;
+  company_created_at?: string | null;
+  company_grade?: string | null;
   user_id: number | null;
   user_name?: string | null;
   action: string;
@@ -207,6 +209,7 @@ function ActivityLogPage() {
               <th className="text-left p-4 font-semibold text-gray-700 border-b" style={{width: '130px'}}>Created at</th>
               <th className="text-left p-4 font-semibold text-gray-700 border-b" style={{width: '180px'}}>Company Name</th>
               <th className="text-left p-4 font-semibold text-gray-700 border-b" style={{width: '140px'}}>Company Type</th>
+              <th className="text-left p-4 font-semibold text-gray-700 border-b" style={{width: '90px'}}>Grade</th>
               <th className="text-left p-4 font-semibold text-gray-700 border-b" style={{width: '110px'}}>Time</th>
               <th className="text-left p-4 font-semibold text-gray-700 border-b" style={{width: '120px'}}>User</th>
               <th className="text-left p-4 font-semibold text-gray-700 border-b" style={{width: '150px'}}>Action</th>
@@ -217,29 +220,31 @@ function ActivityLogPage() {
           <tbody style={{overflow: 'visible'}}>
             {isLoading && (
               <tr>
-                <td className="p-4 text-center text-gray-500" colSpan={8}>Loading activity logs...</td>
+                <td className="p-4 text-center text-gray-500" colSpan={9}>Loading activity logs...</td>
               </tr>
             )}
             {isError && (
               <tr>
-                <td className="p-4 text-center text-red-600" colSpan={8}>Error loading activity logs</td>
+                <td className="p-4 text-center text-red-600" colSpan={9}>Error loading activity logs</td>
               </tr>
             )}
             {!isLoading && !isError && logs.length === 0 && (
               <tr>
-                <td className="p-4 text-center text-gray-500" colSpan={8}>No activity found</td>
+                <td className="p-4 text-center text-gray-500" colSpan={9}>No activity found</td>
               </tr>
             )}
             {logs.map((log, index) => {
               const companyName = log.properties?.company_name || '-';
               const companyNameTruncated = log.properties?.company_name && log.properties.company_name.length > 30 ? log.properties.company_name.substring(0, 30) + '...' : companyName;
               const companyType = log.properties?.company_type || '-';
+              const grade = log.company_grade || log.properties?.new_grade || log.properties?.grade || '-';
               const remarks = log.properties?.remarks ? (log.properties.remarks.length > 50 ? log.properties.remarks.substring(0, 50) + '...' : log.properties.remarks) : '-';
               const status = log.properties?.status || log.properties?.new_status || '-';
+              const createdAtDate = log.company_created_at || log.created_at;
               
               return (
                 <tr key={log.id} className={`border-b hover:bg-gray-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`} style={{overflow: 'visible'}}>
-                  <td className="p-4 whitespace-nowrap text-sm text-gray-900" style={{width: '130px'}}>{formatDate(log.created_at)}</td>
+                  <td className="p-4 whitespace-nowrap text-sm text-gray-900" style={{width: '130px'}}>{formatDate(createdAtDate)}</td>
                   <td className="p-4 text-sm text-gray-900" style={{width: '180px'}}>
                     {companyName !== '-' ? (
                       <div className="relative group">
@@ -268,6 +273,7 @@ function ActivityLogPage() {
                     )}
                   </td>
                   <td className="p-4 text-sm text-gray-600" style={{width: '140px', wordBreak: 'break-word'}}>{companyType}</td>
+                  <td className="p-4 whitespace-nowrap text-sm text-gray-900" style={{width: '90px'}}>{grade}</td>
                   <td className="p-4 whitespace-nowrap text-sm text-gray-900" style={{width: '110px'}}>{formatTime(log.created_at)}</td>
                   <td className="p-4 text-sm" style={{width: '120px'}}>
                     <span className="font-medium text-gray-900">{log.user_name || 'System'}</span>

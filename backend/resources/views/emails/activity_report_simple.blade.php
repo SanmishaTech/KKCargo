@@ -30,7 +30,7 @@
         <p><strong>KK Cargo Movers</strong><br/>
         Activity Monitoring System</p>
         <p>This is an automated email. Please do not reply to this message.</p>
-        <p>Generated on: {{ now()->format('Y-m-d H:i:s') }}</p>
+        <p>Generated on: {{ now()->timezone('Asia/Kolkata')->format('Y-m-d H:i:s') }}</p>
       </div>
     </div>
   </body>

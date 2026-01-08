@@ -8,6 +8,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Resources\CompanyResource;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Mail;
 use App\Http\Controllers\Api\BaseController;
@@ -155,6 +157,7 @@ class CompanyController extends BaseController
         $company->alternate_contact_person_designation = $request->input('alternate_contact_person_designation');
         $company->alternate_contact_email = $request->input('alternate_contact_email');
         $company->alternate_contact_mobile = $request->input('alternate_contact_mobile');
+        $company->grade = $request->input('grade') !== '' ? $request->input('grade') : null;
         
         // Set default status to 'waiting' when a company is created
         $company->status = 'waiting';
@@ -219,6 +222,10 @@ class CompanyController extends BaseController
         $company->alternate_contact_person_designation = $request->input('alternate_contact_person_designation');
         $company->alternate_contact_email = $request->input('alternate_contact_email');
         $company->alternate_contact_mobile = $request->input('alternate_contact_mobile');
+
+        if ($request->has('grade')) {
+            $company->grade = $request->input('grade') !== '' ? $request->input('grade') : null;
+        }
 
 
            
@@ -525,6 +532,8 @@ EOT;
                 'contact_person'  => array_search('Contact Person', $headers),
                 'contact_mobile'  => array_search('Contact Mobile', $headers),
             ];
+
+            $gradeIndex = array_search('Grade', $headers);
     
             // Validate that all required columns are present
             foreach ($columnMap as $key => $index) {
@@ -560,6 +569,13 @@ EOT;
                     $company->contact_email = trim($row[$columnMap['contact_email']]);
                     $company->contact_person = trim($row[$columnMap['contact_person']]);
                     $company->contact_mobile = trim($row[$columnMap['contact_mobile']]);
+
+                    if ($gradeIndex !== false) {
+                        $gradeValue = trim((string) ($row[$gradeIndex] ?? ''));
+                        if ($gradeValue !== '') {
+                            $company->grade = $gradeValue;
+                        }
+                    }
                     // Set default status to 'waiting' during import
                     $company->status = 'waiting';
                     
@@ -599,21 +615,31 @@ EOT;
      */
     public function downloadTemplate()
     {
-        // Path to the template located in backend/excel/students.xlsx
-        $filePath = base_path('excel/company.xlsx');
+        try {
+            $spreadsheet = new Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
 
-        if (!file_exists($filePath)) {
-            return $this->sendError('File not found', ['error' => 'Template not found'], 404);
-        }
+            $sheet->fromArray([
+                'Company Name',
+                'Type Of Company',
+                'Street Address',
+                'City',
+                'Email',
+                'Contact Person',
+                'Contact Mobile',
+                'Grade',
+            ], null, 'A1');
 
-        // Return the file as a download response
-        return response()->download(
-            $filePath,
-            'company_template.xlsx',
-            [
+            $writer = new Xlsx($spreadsheet);
+
+            return response()->streamDownload(function () use ($writer) {
+                $writer->save('php://output');
+            }, 'company_template.xlsx', [
                 'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            ]
-        );
+            ]);
+        } catch (\Exception $e) {
+            return $this->sendError('Template Error', ['error' => $e->getMessage()], 500);
+        }
     }
 
     /**

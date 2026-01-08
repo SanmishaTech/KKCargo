@@ -19,17 +19,30 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { ComboboxWithDelete } from "@/components/ui/combobox-with-delete";
+import { ComboboxWithDelete } from "@/Components/ui/combobox-with-delete";
 import axios from "axios";
 import { AxiosError } from "axios";
 import { usePutData } from "@/Components/HTTP/PUT";
 import { useGetData } from "@/Components/HTTP/GET";
 import { toast } from "sonner";
 import { useNavigate, useParams } from "@tanstack/react-router";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const profileFormSchema = z
   .object({
     company_name: z.string().nonempty("Company Name is Required"),
+    grade: z
+      .string()
+      .optional()
+      .refine((v) => !v || ["1", "2", "3", "4"].includes(v), {
+        message: "Grade must be 1, 2, 3, or 4",
+      }),
     street_address: z.string().nonempty("Street Address is Required"),
     area: z.any().optional(),
     city: z.any().optional(),
@@ -80,6 +93,7 @@ function ProfileForm({ formData, id }: { formData: any; id?: string }) {
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
       company_name: "",
+      grade: "",
       street_address: "",
       area: "",
       city: "",
@@ -173,6 +187,7 @@ function ProfileForm({ formData, id }: { formData: any; id?: string }) {
     if (formData && Object.keys(formData).length) {
       const sanitizedData = {
         company_name: formData.company_name || "",
+        grade: formData.grade ? String(formData.grade) : "",
         street_address: formData.street_address || "",
         area: formData.area || "",
         city: formData.city || "",
@@ -271,6 +286,27 @@ function ProfileForm({ formData, id }: { formData: any; id?: string }) {
                         placeholder="Select a type of company"
                         showDelete={true}
                       />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="grade"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Grade</FormLabel>
+                      <Select value={field.value || ""} onValueChange={field.onChange}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select grade" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">1</SelectItem>
+                          <SelectItem value="2">2</SelectItem>
+                          <SelectItem value="3">3</SelectItem>
+                          <SelectItem value="4">4</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}

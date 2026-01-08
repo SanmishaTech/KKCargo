@@ -94,13 +94,6 @@ export default function Dashboardholiday() {
     { value: "busy_on_call", label: "Busy on another call" },
   ]);
 
-  const [gradeOptions] = useState([
-    { value: "1", label: "1" },
-    { value: "2", label: "2" },
-    { value: "3", label: "3" },
-    { value: "4", label: "4" },
-  ]);
-
   // Memoized callback functions to prevent infinite re-renders
   const onSuccess = useCallback((response: any) => {
     if (!response?.data) return;
@@ -307,35 +300,6 @@ export default function Dashboardholiday() {
     } catch (error: any) {
       console.error("Error updating status:", error);
       toast.error(error.response?.data?.message || "Failed to update status");
-    }
-  };
-
-  // Handle grade update for companies
-  const handleGradeUpdate = async (companyId: string, newGrade: string) => {
-    try {
-      const response = await axios.put(
-        `/api/companies/${companyId}/grade`,
-        { grade: newGrade },
-        {
-          headers: {
-            Authorization: "Bearer " + localStorage.getItem("token"),
-          },
-        }
-      );
-
-      if (response.data.status) {
-        setData((prev) =>
-          prev.map((company) =>
-            company.id === companyId ? { ...company, grade: newGrade } : company
-          )
-        );
-        toast.success("Grade updated successfully");
-      } else {
-        toast.error("Failed to update grade");
-      }
-    } catch (error: any) {
-      console.error("Error updating grade:", error);
-      toast.error(error.response?.data?.message || "Failed to update grade");
     }
   };
 
@@ -553,23 +517,7 @@ export default function Dashboardholiday() {
           </SelectContent>
         </Select>
       ),
-      grade: (
-        <Select
-          value={item?.grade ? String(item.grade) : undefined}
-          onValueChange={(value) => handleGradeUpdate(item?.id, value)}
-        >
-          <SelectTrigger className="w-[90px] h-8">
-            <SelectValue placeholder="Select grade" />
-          </SelectTrigger>
-          <SelectContent>
-            {gradeOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      ),
+      grade: item?.grade ? String(item.grade) : "-",
       last_calling: formatDateDDMMYYYY(item?.last_calling_date),
       delete:
         item?.role?.toLowerCase() !== "admin" ? "/companies/" + item?.id : null,

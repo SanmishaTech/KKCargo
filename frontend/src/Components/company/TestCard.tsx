@@ -1,14 +1,11 @@
-import { Link, Navigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, ControllerRenderProps, useFieldArray } from "react-hook-form";
+import { useForm, ControllerRenderProps } from "react-hook-form";
 import { z } from "zod";
-import { MoveLeft, X } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { MoveLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -21,7 +18,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { ComboboxWithDelete } from "@/components/ui/combobox-with-delete";
+import { ComboboxWithDelete } from "@/Components/ui/combobox-with-delete";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import {
@@ -31,7 +28,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { AxiosError } from "axios";
 import { usePostData } from "@/Components/HTTP/POST";
 import { toast } from "sonner";
@@ -40,6 +36,12 @@ import { toast } from "sonner";
 const profileFormSchema = z
   .object({
     company_name: z.string().nonempty("Company Name is Required"),
+    grade: z
+      .string()
+      .optional()
+      .refine((v) => !v || ["1", "2", "3", "4"].includes(v), {
+        message: "Grade must be 1, 2, 3, or 4",
+      }),
     street_address: z.string().nonempty("Street Address is Required"),
     area: z.any().optional(),
     city: z.any().optional(),
@@ -87,6 +89,7 @@ type ProfileFormValues = z.infer<typeof profileFormSchema> & {
 // This can come from your database or API.
 const defaultValues: Partial<ProfileFormValues> = {
   company_name: "",
+  grade: "",
   street_address: "",
   area: "",
   city: "",
@@ -145,7 +148,6 @@ function ProfileForm() {
   });
   const user = localStorage.getItem("user");
   const User = JSON.parse(user || "{}");
-  const token = localStorage.getItem("token");
     const typeOfCompany = form.watch("type_of_company");
 
   useEffect(() => {
@@ -290,6 +292,27 @@ function ProfileForm() {
                         placeholder="Select a type of company"
                         showDelete={true}
                       />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="grade"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Grade</FormLabel>
+                      <Select value={field.value || ""} onValueChange={field.onChange}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select grade" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">1</SelectItem>
+                          <SelectItem value="2">2</SelectItem>
+                          <SelectItem value="3">3</SelectItem>
+                          <SelectItem value="4">4</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}

@@ -31,11 +31,12 @@ class SendActivityReport extends Command
     private function getReportDate(): ?string
     {
         $dateOption = $this->option('date');
+        $tz = 'Asia/Kolkata';
         
         try {
             return $dateOption 
-                ? Carbon::parse($dateOption)->format('Y-m-d')
-                : Carbon::yesterday()->format('Y-m-d');
+                ? Carbon::parse($dateOption, $tz)->format('Y-m-d')
+                : Carbon::now($tz)->format('Y-m-d'); // send today's report when run at 5:30 IST
         } catch (\Exception $e) {
             $this->error('Invalid date format. Use YYYY-MM-DD.');
             return null;

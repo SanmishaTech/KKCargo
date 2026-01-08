@@ -33,16 +33,19 @@ class ActivityLogController extends BaseController
             return $this->sendError('Validation Error', $validator->errors(), 422);
         }
 
+        $tz = 'Asia/Kolkata';
+
         try {
-            $reportDate = $request->filled('date')
-                ? Carbon::parse($request->input('date'))->startOfDay()
-                : Carbon::today()->startOfDay();
+            $reportDateLocal = $request->filled('date')
+                ? Carbon::parse($request->input('date'), $tz)->startOfDay()
+                : Carbon::now($tz)->startOfDay();
         } catch (\Exception $e) {
             return $this->sendError('Invalid date', ['error' => 'Use YYYY-MM-DD'], 422);
         }
 
-        $start = $reportDate->copy()->startOfDay();
-        $end   = $reportDate->copy()->endOfDay();
+        // Convert IST boundaries to UTC for querying stored timestamps
+        $start = $reportDateLocal->copy()->tz('UTC');
+        $end   = $reportDateLocal->copy()->endOfDay()->tz('UTC');
 
         $logs = ActivityLog::with('user')
             ->whereBetween('created_at', [$start, $end])
@@ -91,14 +94,21 @@ class ActivityLogController extends BaseController
                 if (empty($properties['status']) && empty($properties['new_status'])) {
                     $properties['status'] = $company->status;
                 }
+                if (empty($properties['grade']) && empty($properties['new_grade'])) {
+                    $properties['grade'] = $company->grade;
+                }
             }
+
+            // Provide company_created_at for parity with activity log listing
+            $log->setAttribute('company_created_at', $company ? $company->created_at : null);
 
             $log->properties = $properties;
             return $log;
         });
 
         $summary = [
-            'date' => $reportDate->toDateString(),
+            // Keep summary date in IST for user-facing output
+            'date' => $reportDateLocal->toDateString(),
             'total' => $logs->count(),
             'by_action' => $logs->groupBy('action')->map->count()->sortDesc(),
             'by_user' => $logs->groupBy('user_id')->map(function ($items, $userId) {
@@ -200,18 +210,66 @@ class ActivityLogController extends BaseController
 
         $logs = $q->paginate(10);
 
+        $items = $logs->getCollection();
+
+        $companyIds = $items
+            ->map(function ($log) {
+                $properties = is_array($log->properties) ? $log->properties : [];
+
+                $companyId = $properties['company_id'] ?? null;
+
+                if (!$companyId && $log->subject_type === Company::class && $log->subject_id) {
+                    $companyId = $log->subject_id;
+                }
+
+                return $companyId;
+            })
+            ->filter()
+            ->unique()
+            ->values();
+
+        $companiesById = $companyIds->isNotEmpty()
+            ? Company::whereIn('id', $companyIds)
+                ->get(['id', 'created_at', 'company_name', 'type_of_company', 'status', 'grade'])
+                ->keyBy('id')
+            : collect();
+
         // Transform for frontend simplicity
-        $collection = $logs->getCollection()->map(function ($log) {
+        $collection = $items->map(function ($log) use ($companiesById) {
+            $properties = is_array($log->properties) ? $log->properties : [];
+
+            $companyId = $properties['company_id'] ?? null;
+            if (!$companyId && $log->subject_type === Company::class && $log->subject_id) {
+                $companyId = $log->subject_id;
+                $properties['company_id'] = $companyId;
+            }
+
+            $company = $companyId ? $companiesById->get($companyId) : null;
+
+            if ($company) {
+                if (empty($properties['company_name'])) {
+                    $properties['company_name'] = $company->company_name;
+                }
+                if (empty($properties['company_type']) && empty($properties['type_of_company'])) {
+                    $properties['company_type'] = $company->type_of_company;
+                }
+                if (empty($properties['status']) && empty($properties['new_status'])) {
+                    $properties['status'] = $company->status;
+                }
+            }
+
             return [
                 'id'           => $log->id,
                 'created_at'   => $log->created_at,
+                'company_created_at' => $company ? $company->created_at : null,
+                'company_grade' => $company ? $company->grade : null,
                 'user_id'      => $log->user_id,
                 'user_name'    => optional($log->user)->name,
                 'action'       => $log->action,
                 'subject_type' => $log->subject_type,
                 'subject_id'   => $log->subject_id,
                 'description'  => $log->description,
-                'properties'   => $log->properties,
+                'properties'   => $properties,
                 'ip_address'   => $log->ip_address,
             ];
         });
