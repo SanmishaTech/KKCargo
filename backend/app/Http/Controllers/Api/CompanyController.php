@@ -716,4 +716,130 @@ EOT;
         }
     }
 
+    /**
+     * Export companies to Excel.
+     */
+    public function exportExcel(Request $request)
+    {
+        // Build the base query.
+        $query = Company::query();
+
+        // Apply filters (same as index method)
+        if ($searchTerm = $request->query('search')) {
+            $query->where('company_name', 'like', '%' . $searchTerm . '%');
+        }
+
+        if ($companyType = $request->query('company_type')) {
+            $query->where('type_of_company', $companyType);
+        }
+
+        if ($city = $request->query('city')) {
+            $query->where('city', 'like', '%' . $city . '%');
+        }
+
+        if ($status = $request->query('status')) {
+            $query->where('status', $status);
+        }
+
+        if ($day = $request->query('day')) {
+            $query->whereDay('created_at', $day);
+        }
+        
+        if ($month = $request->query('month')) {
+            $query->whereMonth('created_at', $month);
+        }
+        
+        if ($year = $request->query('year')) {
+            $query->whereYear('created_at', $year);
+        }
+        
+        if ($request->query('date_filter')) {
+            $dateFilter = $request->query('date_filter');
+            if (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $dateFilter, $matches)) {
+                $query->whereYear('created_at', $matches[1])
+                      ->whereMonth('created_at', $matches[2])
+                      ->whereDay('created_at', $matches[3]);
+            } elseif (preg_match('/^(\d{4})-(\d{2})$/', $dateFilter, $matches)) {
+                $query->whereYear('created_at', $matches[1])
+                      ->whereMonth('created_at', $matches[2]);
+            }
+        }
+
+        if ($request->query('created_at')) {
+            $createdAt = $request->query('created_at');
+            if (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $createdAt, $matches)) {
+                $query->whereYear('created_at', $matches[1])
+                      ->whereMonth('created_at', $matches[2])
+                      ->whereDay('created_at', $matches[3]);
+            } elseif (preg_match('/^(\d{4})-(\d{2})$/', $createdAt, $matches)) {
+                $query->whereYear('created_at', $matches[1])
+                      ->whereMonth('created_at', $matches[2]);
+            }
+        }
+
+        // Order by created_at desc
+        $query->orderBy('created_at', 'desc');
+
+        // Eager load followUps relationship
+        $query->with(['followUps' => function($q) {
+            $q->where('follow_up_type', 'call')
+              ->orderBy('created_at', 'desc')
+              ->limit(1);
+        }]);
+
+        $companies = $query->get();
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // Set headers
+        $headers = [
+            'Created At', 
+            'Company Name', 
+            'Company Type', 
+            'Street Address', 
+            'City', 
+            'Email', 
+            'Contact Person', 
+            'Contact Mobile',
+            'Grade',
+            'Status',
+            'Last Calling Date'
+        ];
+        $sheet->fromArray($headers, null, 'A1');
+
+        $rowCount = 2;
+        foreach ($companies as $company) {
+            $lastCallFollowUp = $company->followUps->first();
+            $lastCallingDate = $lastCallFollowUp ? $lastCallFollowUp->next_follow_up_date : '-';
+
+            $sheet->fromArray([
+                $company->created_at->format('d/m/Y'),
+                $company->company_name,
+                $company->type_of_company,
+                $company->street_address,
+                $company->city,
+                $company->contact_email,
+                $company->contact_person,
+                $company->contact_mobile,
+                $company->grade ?? '-',
+                ucfirst($company->status),
+                $lastCallingDate
+            ], null, 'A' . $rowCount);
+            $rowCount++;
+        }
+
+        // Auto-size columns for better readability
+        foreach (range('A', 'K') as $columnID) {
+            $sheet->getColumnDimension($columnID)->setAutoSize(true);
+        }
+
+        $writer = new Xlsx($spreadsheet);
+
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, 'companies_export_' . now()->format('Y-m-d_H-i-s') . '.xlsx', [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
 }

@@ -44,6 +44,7 @@ Route::group(['middleware'=>['auth:sanctum', 'permission','request.null']], func
       // Company custom routes (keep before resource to avoid conflict)
    Route::post('/companies/importCompany', [CompanyController::class, 'importCompany'])->name('companies.import');
    Route::get('/companies/download-template', [CompanyController::class, 'downloadTemplate'])->name('companies.download-template');
+   Route::get('/companies/export', [CompanyController::class, 'exportExcel'])->name('companies.export');
    Route::get('/all_companies', [CompanyController::class, 'allCompany'])->name("companys.all");
    // Send brochure route
    Route::post('/companies/send-brochure', [CompanyController::class, 'sendBrochure'])->name('companies.send-brochure');

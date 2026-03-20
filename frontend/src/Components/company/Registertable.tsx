@@ -379,9 +379,39 @@ export default function Dashboardholiday() {
     // For example, navigate to an add registration page or open a modal
   };
 
-  const handleExport = () => {
-    console.log("Export clicked");
-    // Implement export functionality such as exporting data as CSV or PDF
+  const handleExport = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (searchQuery) params.set("search", searchQuery);
+      if (filter.dateFilter) params.set("date_filter", filter.dateFilter);
+      if (filter.companyType) params.set("company_type", filter.companyType);
+      if (filter.city) params.set("city", filter.city);
+      if (filter.status) params.set("status", filter.status);
+      if (filter.createdAt) params.set("created_at", filter.createdAt);
+      if (filter.day) params.set("day", filter.day);
+      if (filter.month) params.set("month", filter.month);
+      if (filter.year) params.set("year", filter.year);
+
+      const response = await axios.get(`/api/companies/export?${params.toString()}`, {
+        headers: {
+          Authorization: "Bearer " + localStorage.getItem("token"),
+        },
+        responseType: "blob",
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `companies_export_${new Date().toISOString().split('T')[0]}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success("Excel exported successfully");
+    } catch (error) {
+      console.error("Export error:", error);
+      toast.error("Failed to export Excel");
+    }
   };
 
   const handleFilterChange = (filterValue) => {

@@ -558,6 +558,16 @@ export default function Dashboard({
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
+                
+                <Button
+                  color="primary"
+                  variant="solid"
+                  startContent={<Files size={16} />}
+                  onPress={onExport}
+                  className="h-9"
+                >
+                  Export
+                </Button>
 
                 {/* Bulk Delete Button - only show when items are selected */}
                 {selectedRows.size > 0 && (
