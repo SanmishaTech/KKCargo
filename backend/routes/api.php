@@ -56,7 +56,8 @@ Route::group(['middleware'=>['auth:sanctum', 'permission','request.null']], func
    // Company status update (must be before resource routes)
    Route::put('/companies/{id}/status', [CompanyController::class, 'updateStatus'])->name('companies.update-status');
    // Company grade update (must be before resource routes)
-   Route::put('/companies/{id}/grade', [CompanyController::class, 'updateGrade'])->name('companies.update-grade');
+    Route::put('/companies/{id}/grade', [CompanyController::class, 'updateGrade'])->name('companies.update-grade');
+    Route::put('/companies/{id}/last-calling-date', [CompanyController::class, 'updateLastCallingDate'])->name('companies.update-last-calling-date');
    // Bulk delete companies
    Route::post('/companies/bulk-delete', [CompanyController::class, 'bulkDelete'])->name('companies.bulk-delete');
     // Company resource routes

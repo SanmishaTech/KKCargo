@@ -52,6 +52,7 @@ interface Company {
   services?: { serviceId?: { price?: number } }[];
   paymentMode?: { paidAmount?: number };
   created_at: string;
+  last_calling_date?: string | null;
 }
 
 export default function Dashboardholiday() {
@@ -299,7 +300,39 @@ export default function Dashboardholiday() {
       }
     } catch (error: any) {
       console.error("Error updating status:", error);
-      toast.error(error.response?.data?.message || "Failed to update status");
+        toast.error(error.response?.data?.message || "Failed to update status");
+    }
+  };
+
+  // Handle last calling date update for companies
+  const handleLastCallingDateUpdate = async (companyId: string, newDate: string) => {
+    if (!newDate) return; // Don't send empty dates
+    try {
+      const response = await axios.put(`/api/companies/${companyId}/last-calling-date`, 
+        { last_calling_date: newDate },
+        {
+          headers: {
+            Authorization: "Bearer " + localStorage.getItem("token"),
+          },
+        }
+      );
+
+      if (response.data.status) {
+        // Update the local state
+        setData(prev => 
+          prev.map(company => 
+            company.id === companyId 
+              ? { ...company, last_calling_date: newDate }
+              : company
+          )
+        );
+        toast.success("Last calling date updated successfully");
+      } else {
+        toast.error("Failed to update last calling date");
+      }
+    } catch (error: any) {
+      console.error("Error updating last calling date:", error);
+      toast.error(error.response?.data?.message || "Failed to update last calling date");
     }
   };
 
@@ -548,7 +581,16 @@ export default function Dashboardholiday() {
         </Select>
       ),
       grade: item?.grade ? String(item.grade) : "-",
-      last_calling: formatDateDDMMYYYY(item?.last_calling_date),
+      last_calling: (
+        <input
+          type="date"
+          className="w-[140px] h-8 px-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+          value={item?.last_calling_date ? item.last_calling_date.split('T')[0] : ""}
+          onChange={(e) => handleLastCallingDateUpdate(item?.id, e.target.value)}
+          onKeyDown={(e) => e.preventDefault()}
+          onClick={(e) => e.stopPropagation()}
+        />
+      ),
       delete:
         item?.role?.toLowerCase() !== "admin" ? "/companies/" + item?.id : null,
     };

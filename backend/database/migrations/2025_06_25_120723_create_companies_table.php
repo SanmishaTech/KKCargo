@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -33,6 +32,8 @@ return new class extends Migration
             $table->string('alternate_contact_person_designation')->nullable();
             $table->string('alternate_contact_email')->nullable();
             $table->string('alternate_contact_mobile')->nullable();
+            $table->date('last_calling_date')->nullable()->after('grade');
+
 
 
             $table->timestamps();

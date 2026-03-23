@@ -531,6 +531,7 @@ EOT;
                 'contact_email'         => array_search('Email', $headers),
                 'contact_person'  => array_search('Contact Person', $headers),
                 'contact_mobile'  => array_search('Contact Mobile', $headers),
+                'last_calling_date'  => array_search('Last Calling Date', $headers),
             ];
 
             $gradeIndex = array_search('Grade', $headers);
@@ -570,6 +571,14 @@ EOT;
                     $company->contact_person = trim($row[$columnMap['contact_person']]);
                     $company->contact_mobile = trim($row[$columnMap['contact_mobile']]);
 
+                    if ($columnMap['last_calling_date'] !== false) {
+                        $lastCallingDate = trim((string) ($row[$columnMap['last_calling_date']] ?? ''));
+                        if ($lastCallingDate !== '') {
+                            // Try to format the date if possible, otherwise save as is (Model/DB will handle it)
+                            $company->last_calling_date = $lastCallingDate;
+                        }
+                    }
+                    
                     if ($gradeIndex !== false) {
                         $gradeValue = trim((string) ($row[$gradeIndex] ?? ''));
                         if ($gradeValue !== '') {
@@ -628,6 +637,7 @@ EOT;
                 'Contact Person',
                 'Contact Mobile',
                 'Grade',
+                'Last Calling Date',
             ], null, 'A1');
 
             $writer = new Xlsx($spreadsheet);
@@ -713,6 +723,42 @@ EOT;
 
         } catch (\Exception $e) {
             return $this->sendError('Error updating company grade', ['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Update company last calling date.
+     */
+    public function updateLastCallingDate(Request $request, string $id): JsonResponse
+    {
+        try {
+            $company = Company::find($id);
+
+            if (!$company) {
+                return $this->sendError("Company not found", ['error' => 'Company not found']);
+            }
+
+            $request->validate([
+                'last_calling_date' => 'required|date'
+            ]);
+
+            $oldDate = $company->last_calling_date;
+            $company->last_calling_date = $request->input('last_calling_date');
+            $company->save();
+
+            ActivityLogger::log('company.last_calling_date_updated', $company, 'Company last calling date updated', [
+                'company_name' => $company->company_name,
+                'old_date' => $oldDate,
+                'new_date' => $request->input('last_calling_date')
+            ]);
+
+            return $this->sendResponse(
+                ['last_calling_date' => $request->input('last_calling_date')],
+                "Company last calling date updated successfully"
+            );
+
+        } catch (\Exception $e) {
+            return $this->sendError('Error updating company last calling date', ['error' => $e->getMessage()], 500);
         }
     }
 
@@ -808,7 +854,7 @@ EOT;
         $rowCount = 2;
         foreach ($companies as $company) {
             $lastCallFollowUp = $company->latestCall;
-            $lastCallingDate = $lastCallFollowUp ? $lastCallFollowUp->next_follow_up_date : '-';
+            $lastCallingDate = $company->last_calling_date ?? ($lastCallFollowUp ? $lastCallFollowUp->next_follow_up_date : '-');
             $latestRemark = $company->latestFollowUp ? $company->latestFollowUp->remarks : '-';
 
             $sheet->fromArray([

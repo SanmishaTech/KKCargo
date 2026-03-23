@@ -18,7 +18,7 @@ class CompanyResource extends JsonResource
         $lastCallFollowUp = $this->latestCall;
 
         return array_merge(parent::toArray($request), [
-            'last_calling_date' => $lastCallFollowUp ? $lastCallFollowUp->next_follow_up_date : null,
+            'last_calling_date' => $this->last_calling_date ?? ($lastCallFollowUp ? $lastCallFollowUp->next_follow_up_date : null),
         ]);
     }
 }
