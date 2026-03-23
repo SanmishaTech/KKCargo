@@ -780,12 +780,8 @@ EOT;
         // Order by created_at desc
         $query->orderBy('created_at', 'desc');
 
-        // Eager load followUps relationship
-        $query->with(['followUps' => function($q) {
-            $q->where('follow_up_type', 'call')
-              ->orderBy('created_at', 'desc')
-              ->limit(1);
-        }]);
+        // Eager load latest call and latest follow-up
+        $query->with(['latestCall', 'latestFollowUp']);
 
         $companies = $query->get();
 
@@ -804,14 +800,16 @@ EOT;
             'Contact Mobile',
             'Grade',
             'Status',
-            'Last Calling Date'
+            'Last Calling Date',
+            'Remark'
         ];
         $sheet->fromArray($headers, null, 'A1');
 
         $rowCount = 2;
         foreach ($companies as $company) {
-            $lastCallFollowUp = $company->followUps->first();
+            $lastCallFollowUp = $company->latestCall;
             $lastCallingDate = $lastCallFollowUp ? $lastCallFollowUp->next_follow_up_date : '-';
+            $latestRemark = $company->latestFollowUp ? $company->latestFollowUp->remarks : '-';
 
             $sheet->fromArray([
                 $company->created_at->format('d/m/Y'),
@@ -824,13 +822,14 @@ EOT;
                 $company->contact_mobile,
                 $company->grade ?? '-',
                 ucfirst($company->status),
-                $lastCallingDate
+                $lastCallingDate,
+                $latestRemark
             ], null, 'A' . $rowCount);
             $rowCount++;
         }
 
         // Auto-size columns for better readability
-        foreach (range('A', 'K') as $columnID) {
+        foreach (range('A', 'L') as $columnID) {
             $sheet->getColumnDimension($columnID)->setAutoSize(true);
         }
 

@@ -14,4 +14,14 @@ class Company extends Model
     {
         return $this->hasMany(FollowUp::class);
     }
+
+    public function latestFollowUp()
+    {
+        return $this->hasOne(FollowUp::class)->latestOfMany();
+    }
+
+    public function latestCall()
+    {
+        return $this->hasOne(FollowUp::class)->where('follow_up_type', 'call')->latestOfMany();
+    }
 }
